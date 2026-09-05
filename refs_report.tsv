@@ -1,0 +1,64 @@
+apps/api/src/parcours-nominal.test.ts	1037	packages/db/src/schema.ts	788	existe	packages/db/src/schema.ts	1	coutMatiereReelCents: integer('cout_matiere_reel_cents'),
+apps/api/src/parcours-nominal.test.ts	1038	packages/db/src/services/production.ts	690	existe	packages/db/src/services/production.ts	1	motifTexte: `${motifTexteBase} Restitué au lot.`,
+apps/api/src/parcours-nominal.test.ts	1039	packages/db/src/services/sessions.ts	988	existe	packages/db/src/services/sessions.ts	1	cout: production.coutMatiereTheoriqueCents,
+apps/api/src/routes/integration.test.ts	719	apps/api/src/routes/stock.ts	161	existe	apps/api/src/routes/stock.ts	1	* regle 7 nomme : un lot rendu introuvable est efface du point de vue
+apps/api/src/routes/integration.test.ts	2441	apps/api/src/routes/sessions.ts	141	existe	apps/api/src/routes/sessions.ts	1	...(corps.evenementId === undefined ? {} : { evenementId: corps.evenementId }),
+apps/api/src/routes/integration.test.ts	2496	apps/api/src/routes/afsca.ts	105	existe	apps/api/src/routes/afsca.ts	1	'/afsca/temperatures',
+apps/api/src/routes/stock.ts	455	schema.ts	450	existe	packages/db/src/schema.ts	1	* bruit. On saisit donc pour un LOT DE REFERENCE — « pour 100 cafes : 20 g » —
+apps/web/src/pages/AssistanceIa.test.tsx	11	packages/db/src/depots/ia.ts	72	existe	packages/db/src/depots/ia.ts	1	.select({ total: sql<number>`COALESCE(SUM(${journalIa.coutCents}), 0)` })
+apps/web/src/pages/AssistanceIa.tsx	27	apps/api/src/routes/ia.ts	39	existe	apps/api/src/routes/ia.ts	1	app.get('/ia/etat', async () => {
+apps/web/src/pages/AssistanceIa.tsx	27	ia.ts	61	existe	apps/api/src/routes/ia.ts	4	app.get('/ia/journal', async () => {
+apps/web/src/pages/AssistanceIa.tsx	50	ia.ts	1	existe	apps/api/src/routes/ia.ts	4	/**
+apps/web/src/pages/AssistanceIa.tsx	70	packages/db/src/depots/ia.ts	72	existe	packages/db/src/depots/ia.ts	1	.select({ total: sql<number>`COALESCE(SUM(${journalIa.coutCents}), 0)` })
+apps/web/src/pages/Comptabilite.tsx	123	Produits.tsx	1068	existe	apps/web/src/pages/Produits.tsx	1	nom, nature, prix et statut.
+apps/web/src/pages/Factures.tsx	278	packages/core/src/contrats/factures.ts	149	existe	packages/core/src/contrats/factures.ts	1	export const schemaCorrectionLotAppliquee = z.object({
+apps/web/src/pages/Fournisseurs.test.tsx	114	packages/db/src/depots/referentiel.ts	142	existe	packages/db/src/depots/referentiel.ts	1	* Refuse toute ecriture sur le fournisseur SYSTEME (« Inventaire d'ouverture »).
+apps/web/src/pages/Fournisseurs.tsx	95	packages/db/src/schema.ts	118	existe	packages/db/src/schema.ts	1	* `systeme` n'est pas un fournisseur : c'est une contrepartie interne, dont
+apps/web/src/pages/Menus.test.tsx	10	apps/api/src/routes/menus.ts	121	existe	apps/api/src/routes/menus.ts	1	app.post<{ Params: { menuId: string } }>('/menus/:menuId/ventilation', async (requete) => 
+apps/web/src/pages/Menus.test.tsx	102	Menus.tsx	451	existe	apps/web/src/pages/Menus.tsx	1	if (saisiePrixForce !== '') {
+apps/web/src/pages/Opportunites.test.tsx	13	packages/core/src/contrats/opportunites.ts	79	existe	packages/core/src/contrats/opportunites.ts	1	coutKilometriqueCentsParKm: z.number(),
+apps/web/src/pages/Opportunites.tsx	129	packages/core/src/contrats/opportunites.ts	79	existe	packages/core/src/contrats/opportunites.ts	1	coutKilometriqueCentsParKm: z.number(),
+apps/web/src/pages/PrevisionCalendaire.tsx	168	previsions.ts	451	existe	apps/api/src/routes/previsions.ts	3	session.dateSession,
+apps/web/src/pages/ProchaineSession.tsx	82	previsions.ts	195	existe	apps/api/src/routes/previsions.ts	3	// `maintenant` : toujours l'horloge reelle ici, seule `racineUrlMeteo` est
+apps/web/src/pages/Produits.test.tsx	237	apps/api/src/routes/recettes.ts	110	existe	apps/api/src/routes/recettes.ts	1	app.get('/couts-produits', async () => {
+apps/web/src/pages/Produits.tsx	311	apps/api/src/routes/recettes.ts	110	existe	apps/api/src/routes/recettes.ts	1	app.get('/couts-produits', async () => {
+apps/web/src/pages/Produits.tsx	487	apps/api/src/routes/recettes.ts	110	existe	apps/api/src/routes/recettes.ts	1	app.get('/couts-produits', async () => {
+apps/web/src/pages/QualiteModele.test.tsx	8	packages/core/src/contrats/previsions.ts	209	existe	packages/core/src/contrats/previsions.ts	1	versionModele: z.string(),
+apps/web/src/pages/QualiteModele.tsx	68	previsions.ts	209	existe	apps/api/src/routes/previsions.ts	3	// Quatre colonnes fraichement branchees (defaut 1) : desormais ecrites
+apps/web/src/pages/Sessions.test.tsx	437	packages/db/src/services/sessions.ts	1504	existe	packages/db/src/services/sessions.ts	1	* fait donc PAS grossir `coutMatiereCents` par rapport a l'ancien calcul,
+apps/web/src/pages/Sessions.test.tsx	685	apps/api/src/routes/ia.ts	81	existe	apps/api/src/routes/ia.ts	1	app.post<{ Params: { id: string } }>('/ia/analyse-ecart/:id', async (requete) => {
+apps/web/src/pages/Sessions.tsx	368	packages/db/src/depots/sessions.ts	113	existe	packages/db/src/depots/sessions.ts	1	};
+apps/web/src/pages/Sessions.tsx	369	packages/db/src/services/sessions.ts	1490	existe	packages/db/src/services/sessions.ts	1	parId,
+apps/web/src/pages/Sessions.tsx	419	packages/db/src/services/sessions.ts	1504	existe	packages/db/src/services/sessions.ts	1	* fait donc PAS grossir `coutMatiereCents` par rapport a l'ancien calcul,
+apps/web/src/pages/Sessions.tsx	424	packages/db/src/depots/sessions.ts	126	existe	packages/db/src/depots/sessions.ts	1	* un montant = zéro détail supplémentaire), et `justificatifPath` est
+apps/web/src/pages/Sessions.tsx	893	packages/core/src/contrats/sessions.ts	344	existe	packages/core/src/contrats/sessions.ts	1	export const schemaFraisSessionLigne = z.object({
+apps/web/src/pages/Sessions.tsx	896	packages/db/src/services/sessions.ts	1504	existe	packages/db/src/services/sessions.ts	1	* fait donc PAS grossir `coutMatiereCents` par rapport a l'ancien calcul,
+apps/web/src/pages/Sessions.tsx	1438	apps/api/src/routes/ia.ts	81	existe	apps/api/src/routes/ia.ts	1	app.post<{ Params: { id: string } }>('/ia/analyse-ecart/:id', async (requete) => {
+apps/web/src/pages/Sessions.tsx	1563	Tableau.tsx	172	existe	apps/web/src/composants/Tableau.tsx	1	};
+apps/web/src/pages/Stock.tsx	257	packages/db/src/depots/stock.ts	279	existe	packages/db/src/depots/stock.ts	1	valeurCents: valoriserStock(lots, jourReference),
+apps/web/src/pages/TableauDeBord.tsx	1490	Tableau.tsx	172	existe	apps/web/src/composants/Tableau.tsx	1	};
+packages/core/src/affichage.ts	247	packages/core/src/contrats/economies.ts	155	existe	packages/core/src/contrats/economies.ts	1	export const schemaDetectionEconomie = z.object({
+packages/core/src/affichage.ts	249	economies.ts	150	existe	apps/api/src/routes/economies.ts	4	'prixCandidatCents doit être un nombre entier de centimes.',
+packages/core/src/affichage.ts	308	packages/core/src/contrats/stock.ts	148	existe	packages/core/src/contrats/stock.ts	1	* DÉDUITE côté serveur). `enregistrerReception`
+packages/core/src/affichage.ts	328	packages/core/src/contrats/stock.ts	149	existe	packages/core/src/contrats/stock.ts	1	* (`packages/db/src/services/reception.ts`) est donc la seule autorité sur
+packages/core/src/invariants.test.ts	479	unites.ts	50	existe	packages/core/src/unites.ts	1	// `Number.isFinite` et pas seulement `<= 0` : `NaN` et `Infinity` passaient la
+packages/core/src/invariants.test.ts	1828	baseline.ts	47	existe	packages/core/src/prevision/baseline.ts	1	* Age en jours de `dateSession` par rapport a `jourReference`. Negatif (ou
+packages/core/src/invariants.test.ts	1849	baseline.ts	96	existe	packages/core/src/prevision/baseline.ts	1	* Ventes qu'aurait donnees cette session si la meteo, l'evenement et la saison
+packages/core/src/invariants.test.ts	1967	comptabilite.ts	79	existe	apps/api/src/routes/comptabilite.ts	4	const annee =
+packages/core/src/invariants.test.ts	1997	comptabilite.ts	71	existe	apps/api/src/routes/comptabilite.ts	4	return Number.parseInt(brute, 10);
+packages/core/src/invariants.test.ts	2009	contrats/comptabilite.ts	104	existe	packages/core/src/contrats/comptabilite.ts	1	valeurResiduelleCents: z.int(),
+packages/core/src/invariants.test.ts	2204	ia.ts	63	existe	apps/api/src/routes/ia.ts	4	return schemaJournalIa.parse({ data: lignes, meta: { total: lignes.length } });
+packages/core/src/stock.test.ts	360	packages/db/src/depots/stock.ts	279	existe	packages/db/src/depots/stock.ts	1	valeurCents: valoriserStock(lots, jourReference),
+packages/core/src/contrats/comptabilite.ts	276	services/mouvements.ts	450	existe	packages/db/src/services/mouvements.ts	1	verifierPeriodeNonVerrouillee(baseTx, dateMouvement);
+packages/core/src/contrats/sessions.ts	513	packages/db/src/depots/sessions.ts	460	existe	packages/db/src/depots/sessions.ts	1	toleranceE604b: { readonly plafondCents: number; readonly statut: Statut } | null;
+packages/db/src/audit-colonnes-orphelines.test.ts	150	depots/productions.ts	94	existe	packages/db/src/depots/productions.ts	1	coutReelCents: number | null;
+packages/db/src/audit-colonnes-orphelines.test.ts	350	services/reception.ts	170	existe	packages/db/src/services/reception.ts	1	// permet a la reponse de dire QUELLE commande vient d'etre soldee (« voir
+packages/db/src/audit-silences.test.ts	102	depots/stock.ts	190	existe	packages/db/src/depots/stock.ts	1	.leftJoin(motif, eq(lot.motifStatutId, motif.id))
+packages/db/src/depots/comptabilite.ts	1315	services/mouvements.ts	210	existe	packages/db/src/services/mouvements.ts	1	verifierPeriodeNonVerrouillee(baseTx, origine.dateMouvement);
+packages/db/src/depots/comptabilite.ts	1323	services/reception.ts	572	existe	packages/db/src/services/reception.ts	1	verifierPeriodeNonVerrouillee(baseTx, existante.dateReception);
+packages/db/src/depots/comptabilite.ts	1327	services/production.ts	486	existe	packages/db/src/services/production.ts	1	verifierPeriodeNonVerrouillee(baseTx, existante.dateProduction);
+packages/db/src/depots/comptabilite.ts	1334	services/sessions.ts	855	existe	packages/db/src/services/sessions.ts	1	*
+packages/db/src/depots/comptabilite.ts	1357	services/mouvements.ts	450	existe	packages/db/src/services/mouvements.ts	1	verifierPeriodeNonVerrouillee(baseTx, dateMouvement);
+packages/db/src/scripts/audit-echelle.ts	31	apps/api/src/routes/audit.ts	136	existe	apps/api/src/routes/audit.ts	1	const lignes = listerJournalAudit(base, filtre);
+packages/db/src/services/reception.ts	622	services/sessions.ts	1851	existe	packages/db/src/services/sessions.ts	1	* session cloturee par erreur puis annulee laissait la matiere
+packages/db/src/services/reception.ts	638	services/mouvements.ts	226	existe	packages/db/src/services/mouvements.ts	1	if (origine.type === 'entree') {

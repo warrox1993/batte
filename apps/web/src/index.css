@@ -1,0 +1,421 @@
+@import 'tailwindcss';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BATTE — Jetons de design
+   Doctrine : docs/07-DOCTRINE-ERP-ET-DESIGN.md · Ecrans : docs/06-UI-ET-PARCOURS.md
+
+   Trois idees structurent ce fichier :
+
+   1. La profondeur vient de l'echelle de SURFACES, pas d'ombres. docs/06 interdit
+      les ombres decoratives ; il faut donc que l'ecart de luminance entre le fond
+      de page et un panneau soit reellement visible (>= 4 %).
+   2. La densite est fixee ici, une fois. Rangee de 32 px, texte de base a 13 px.
+      Aucun selecteur de densite : a deux utilisateurs, c'est du cout de test pur.
+   3. Les mauvais choix ne doivent pas compiler. Les espaces de noms inutiles sont
+      remis a `initial`, donc `shadow-lg`, `text-6xl`, `font-bold` et `rounded-3xl`
+      n'existent plus. La discipline est appliquee par le compilateur et survit au
+      code genere par un agent.
+
+   Cible de conception : viewport effectif 1280 x 720. Windows tourne couramment a
+   150 %, donc un ecran 1920x1080 donne 1280x720 en pixels CSS. La HAUTEUR est la
+   ressource rare : ~16 rangees visibles, pas 30.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Mode sombre par selecteur et non par media query : permet de forcer le theme
+   clair au rendu PDF (Playwright). Non actif en V1 — la discipline des jetons
+   semantiques rend son ajout futur quasi gratuit. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ═══ 1. VALEURS BRUTES ════════════════════════════════════════════════════ */
+:root {
+  /* Surfaces. L'ecart canvas -> surface etait de 2 % dans la version precedente
+     (#fafafa vs #ffffff), ce qui rendait l'echelle invisible et tout l'ecran plat.
+     `sunken` est la moitie souvent oubliee : creuser vaut elever. */
+  --canvas: #f4f4f5;
+  --surface: #ffffff;
+  --surface-sunken: #ebebed;
+
+  /* Filets, deux graisses. Une seule = pas de hierarchie, trois = du bruit.
+     `field` est volontairement marquee : dans un ERP de saisie, on doit VOIR ou
+     l'on peut taper. 3,66:1 sur blanc, au-dessus du minimum WCAG 1.4.11. */
+  --line: #e4e4e7;
+  --line-strong: #c9c9ce;
+  --line-field: #85858d;
+
+  /* Encre, quatre niveaux. Contrastes verifies sur --surface. */
+  --ink: #18181b; /* 17,7:1 — valeurs, titres */
+  --ink-2: #3f3f46; /* 10,4:1 — texte courant */
+  --ink-3: #71717a; /*  4,88:1 — secondaire, AA respecte */
+  --ink-4: #a1a1aa; /*  2,58:1 — NON conforme AA : desactive, tiret « — » */
+
+  /* Accent unique : action primaire, anneau de focus, selection.
+     Jamais un statut, jamais decoratif. 6,70:1 — fonctionne en texte sur blanc
+     ET en fond avec texte blanc, ce qui est rare. */
+  --accent: #1d4ed8;
+  --accent-hover: #1e40af;
+  --accent-active: #1e3a8a;
+  --accent-subtle: #eff6ff;
+  --accent-line: #bfdbfe;
+  --on-accent: #ffffff;
+
+  /* Statuts : trois, exactement. Toujours doubles d'un glyphe ou d'un mot —
+     jamais de signal porte par la couleur seule. Deux raisons concretes : le
+     daltonisme, et le fait que ces tableaux partent en PDF noir et blanc chez le
+     comptable et a l'AFSCA. Les trois sont dans une bande 5,0–6,5:1 : aucun ne
+     crie plus fort qu'un autre par accident de luminance. */
+  --conforme: #15803d;
+  --conforme-bg: #f0fdf4;
+  --conforme-line: #bbf7d0;
+  --alerte: #b45309;
+  --alerte-bg: #fffbeb;
+  --alerte-line: #fde68a;
+  --depassement: #b91c1c;
+  --depassement-bg: #fef2f2;
+  --depassement-line: #fecaca;
+
+  /* Graphiques : rampe MONOCHROME de l'accent. Respecte « une seule couleur
+     d'accent » et reste differenciable en niveaux de gris a l'impression. */
+  --serie-1: #1d4ed8;
+  --serie-2: #3b6fe0;
+  --serie-3: #6b93e9;
+  --serie-4: #9db8f1;
+  --serie-5: #cddcf8;
+  --serie-bande: #1d4ed81a;
+  --serie-grille: #e4e4e7;
+  --serie-prevision: #71717a;
+
+  /* Mouvement. Courbes « productives » de Carbon. Rien au-dessus de 250 ms : il
+     n'y a aucun moment marketing dans ce produit. Regle Atlassian : sous 150 ms
+     pour tout ce qui est declenche des dizaines de fois par jour. */
+  --duree-instant: 70ms; /* survol, appui, focus */
+  --duree-rapide: 110ms; /* sortie de couche */
+  --duree-normale: 150ms; /* entree de couche */
+  --duree-panneau: 240ms; /* panneau lateral */
+}
+
+/* ═══ 2. EXPOSITION A TAILWIND ═════════════════════════════════════════════
+   `inline` : les utilitaires pointent vers var(--x). Un futur bloc
+   `.dark { --surface: … }` rebasculera tout le produit sans toucher un composant. */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-line-field: var(--line-field);
+
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-active: var(--accent-active);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-accent-line: var(--accent-line);
+  --color-on-accent: var(--on-accent);
+
+  --color-conforme: var(--conforme);
+  --color-conforme-bg: var(--conforme-bg);
+  --color-conforme-line: var(--conforme-line);
+  --color-alerte: var(--alerte);
+  --color-alerte-bg: var(--alerte-bg);
+  --color-alerte-line: var(--alerte-line);
+  --color-depassement: var(--depassement);
+  --color-depassement-bg: var(--depassement-bg);
+  --color-depassement-line: var(--depassement-line);
+
+  --color-serie-1: var(--serie-1);
+  --color-serie-2: var(--serie-2);
+  --color-serie-3: var(--serie-3);
+  --color-serie-4: var(--serie-4);
+  --color-serie-5: var(--serie-5);
+}
+
+/* ═══ 3. TYPOGRAPHIE ═══════════════════════════════════════════════════════ */
+@theme {
+  /* Pile systeme nettoyee. `-apple-system` et `BlinkMacSystemFont` etaient du
+     poids mort sur un produit Windows. Segoe UI Variable Text est optimise pour
+     12–28 px, exactement notre plage, et gere correctement la ponctuation
+     tabulaire — c'est ce qui aligne la VIRGULE decimale, pas seulement les
+     chiffres. Pas de police auto-hebergee : un seul poste, donc l'argument du
+     determinisme entre machines ne tient pas (docs/05-DECISIONS.md D-016). */
+  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Cascadia Mono', ui-monospace, Consolas, monospace;
+
+  /* Trois graisses. A 13 px sous ClearType, un 300 disparait et un 700 fait une
+     tache. Aucun systeme produit serieux n'utilise plus de trois graisses. */
+  --font-weight-*: initial;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* Echelle. Interlignes en px ENTIERS sur grille de 2 px : indispensable pour
+     que toutes les rangees d'un tableau fassent exactement la meme hauteur.
+     L'interlettrage est une FONCTION DE LA TAILLE, pas une signature : positif
+     sous 13 px (sinon les contreformes se referment et le texte devient une
+     bouillie grise), nul de 13 a 16, negatif au-dessus. C'est le reglage le plus
+     rentable et le plus souvent oublie. */
+  --text-2xs: 11px;
+  --text-2xs--line-height: 14px;
+  --text-2xs--letter-spacing: 0.3px;
+  --text-2xs--font-weight: 600;
+
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-xs--letter-spacing: 0.15px;
+
+  --text-sm: 13px; /* ★ defaut de l'application */
+  --text-sm--line-height: 18px;
+  --text-sm--letter-spacing: 0;
+
+  --text-base: 14px; /* champs de saisie : on relit ce qu'on tape */
+  --text-base--line-height: 20px;
+  --text-base--letter-spacing: 0;
+
+  --text-lg: 16px;
+  --text-lg--line-height: 22px;
+  --text-lg--letter-spacing: -0.1px;
+  --text-lg--font-weight: 600;
+
+  --text-xl: 20px;
+  --text-xl--line-height: 26px;
+  --text-xl--letter-spacing: -0.2px;
+  --text-xl--font-weight: 600;
+
+  --text-2xl: 24px;
+  --text-2xl--line-height: 30px;
+  --text-2xl--letter-spacing: -0.35px;
+  --text-2xl--font-weight: 600;
+
+  --text-3xl: 32px; /* LE chiffre de la semaine, un seul par ecran */
+  --text-3xl--line-height: 36px;
+  --text-3xl--letter-spacing: -0.6px;
+  --text-3xl--font-weight: 600;
+
+  /* Au-dessus de 32 px, rien n'a de sens dans un ERP. */
+  --text-4xl: initial;
+  --text-5xl: initial;
+  --text-6xl: initial;
+  --text-7xl: initial;
+  --text-8xl: initial;
+  --text-9xl: initial;
+}
+
+/* ═══ 4. ESPACEMENT, DIMENSIONS, RAYONS, ELEVATION ═════════════════════════ */
+@theme {
+  --spacing: 0.25rem;
+
+  /* Alias semantiques : `h-rangee`, `px-cellule-x`, `gap-groupe`. Un espacement
+     UNIFORME partout est un anti-pattern : c'est ce qui donne l'impression que
+     rien n'est relie a rien. 4–8 px dans un groupe, 16–24 px entre groupes. */
+  --spacing-cellule-x: 12px;
+  --spacing-bord: 16px;
+  --spacing-groupe: 8px;
+  --spacing-bloc: 16px;
+  --spacing-section: 24px;
+
+  /* Hauteurs fixes. La rangee de saisie fait 36 px et non 32 : un champ de 26 px
+     plus un anneau de focus de 2 px ne tient pas dans 32 px sans mordre le filet
+     de la rangee voisine. */
+  --spacing-rangee: 32px;
+  --spacing-rangee-dense: 28px;
+  --spacing-rangee-saisie: 36px;
+  --spacing-controle: 30px;
+  --spacing-controle-lg: 36px;
+  --spacing-barre: 40px;
+  --spacing-nav: 224px;
+
+  /* Rayons. Plafond bas, assume : sur une rangee de 32 px, un rayon de 8 px
+     consomme un quart de la hauteur. Plancher a 3 px — en dessous, un filet de
+     1 px se rend en escalier sous Windows. */
+  --radius-*: initial;
+  --radius-none: 0;
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-full: 9999px;
+
+  /* UNE ombre, et une seule. Exception assumee a l'interdiction de docs/06 : une
+     couche flottante recouvre un contenu inconnu, donc l'echelle de surfaces ne
+     peut pas la distinguer — c'est le seul cas ou l'ombre est FONCTIONNELLE.
+     Teintee de l'encre et non du noir pur : une ombre noire sur fond clair donne
+     un gris mort. Toutes les autres sont supprimees. */
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --text-shadow-*: initial;
+  --shadow-couche: 0 1px 2px 0 rgb(24 24 27 / 0.05), 0 8px 24px -8px rgb(24 24 27 / 0.16);
+
+  --ease-*: initial;
+  --ease-standard: cubic-bezier(0.2, 0, 0.38, 0.9);
+  --ease-entree: cubic-bezier(0, 0, 0.38, 0.9);
+  --ease-sortie: cubic-bezier(0.2, 0, 1, 0.9);
+}
+
+/* ═══ 5. COUCHE DE BASE ════════════════════════════════════════════════════ */
+@layer base {
+  html {
+    font-size: 16px; /* ancre des rem — ne pas modifier */
+  }
+
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink-2);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* `outline` et non `box-shadow` : une ombre est supprimee par le mode contraste
+     force de Windows, un outline survit. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline-offset: 1px;
+  }
+
+  /* Anneau INTERIEUR sur une cellule de grille, pour ne pas mordre la voisine. */
+  [role='gridcell']:focus-visible,
+  td:focus-visible {
+    outline-offset: -2px;
+  }
+
+  /* Chiffres tabulaires sur une CLASSE, jamais globalement : en prose, des
+     chiffres tabulaires paraissent laches. Le zero barre n'est pas une
+     coquetterie — la confusion O/0 sur un numero de lot a des consequences de
+     tracabilite. */
+  .num {
+    font-variant-numeric: tabular-nums slashed-zero;
+    text-align: right;
+  }
+
+  /* `separate` OBLIGATOIRE : avec `collapse`, les bordures appartiennent a la
+     table et non a la cellule, donc la bordure basse d'un en-tete collant
+     disparait au defilement. Piege classique, present dans la version precedente. */
+  table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    /* `fixed` OBLIGATOIRE : sans lui, les largeurs du <colgroup> ne sont que des
+       suggestions et le contenu elargit le tableau — on obtient un defilement
+       horizontal, et surtout un tri qui deplace toutes les colonnes. Ce saut est
+       fatal a une saisie au clavier : la cible bouge sous les doigts. */
+    table-layout: fixed;
+    font-size: var(--text-sm);
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    height: var(--spacing-rangee);
+    padding: 0 var(--spacing-cellule-x);
+    /* Fond opaque obligatoire, et `sunken` plutot que blanc : indique
+       visuellement « ceci est du chrome, pas de la donnee ». */
+    background: var(--color-surface-sunken);
+    box-shadow: inset 0 -1px 0 var(--color-line-strong);
+    font-size: var(--text-2xs);
+    line-height: var(--text-2xs--line-height);
+    letter-spacing: var(--text-2xs--letter-spacing);
+    font-weight: 600;
+    text-transform: uppercase;
+    text-align: left;
+    /* `ink-2` et non `ink-3` : l'en-tete de colonne se pose sur `surface-sunken`,
+       pas sur `surface`. `ink-3` y tombe a 4,06:1 — sous le seuil AA — et il
+       s'applique a l'en-tete de CHAQUE colonne de huit ecrans. Le jeton avait
+       ete valide sur `surface` alors que son usage principal est le fond
+       enfonce. `ink-2` donne 8,77:1. */
+    color: var(--color-ink-2);
+    white-space: nowrap;
+    /* `nowrap` SEUL faisait deborder un intitule trop long sur la colonne
+       voisine : avec `table-layout: fixed`, rien ne le retenait, et on lisait
+       deux en-tetes superposes. L'ellipse le contient ; `Tableau.tsx` pose le
+       texte complet en `title` sur chaque en-tete, donc plus aucun intitule
+       n'est coupe sans recours. */
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* L'en-tete suit l'alignement de sa colonne : un en-tete a gauche au-dessus de
+     nombres a droite est un defaut visible. */
+  thead th.num {
+    text-align: right;
+  }
+
+  tbody td {
+    height: var(--spacing-rangee);
+    padding: 0 var(--spacing-cellule-x);
+    border-bottom: 1px solid var(--color-line);
+    /* `middle` et non `top` : sur des rangees d'une ligne, le texte flottait. */
+    vertical-align: middle;
+    text-align: left;
+  }
+
+  /* Colonne declaree `troncature: 'repli'` (voir `Tableau.tsx`) : la valeur
+     n'est JAMAIS coupee. Reservee aux colonnes dont la fin porte le sens —
+     numero de lot AFSCA, code de recette, suffixe « (revente) ».
+
+     Le compromis de densite est explicite : `height` sur une cellule de tableau
+     se comporte comme un MINIMUM, donc une rangee qui tient sur une ligne reste
+     a 32 px exactement comme avant. Seules les rangees qui debordaient
+     reellement grandissent. On ne paie la hauteur que la ou l'information
+     etait perdue — et docs/07 §4.4 rappelle que la hauteur est la ressource
+     rare, pas qu'elle est inviolable.
+
+     `anywhere` et non `break-word` : un numero de lot (« LOT-2026-0731-A ») n'a
+     aucune espace, `break-word` ne le couperait donc pas et il deborderait
+     quand meme. */
+  tbody td[data-troncature='repli'] {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    /* 5 px : une ligne unique fait 5 + 18 + 5 = 28 px, sous les 32 px de la
+       rangee — le rythme est intact. Deux lignes font 46 px et respirent. */
+    padding-block: 5px;
+  }
+
+  /* Premiere et derniere colonne : les cellules ne doivent jamais toucher le
+     filet du panneau. */
+  tbody td:first-child,
+  thead th:first-child {
+    padding-left: var(--spacing-bord);
+  }
+  tbody td:last-child,
+  thead th:last-child {
+    padding-right: var(--spacing-bord);
+  }
+
+  tbody tr:hover td {
+    background: var(--color-surface-sunken);
+  }
+
+  tbody tr[aria-selected='true'] td {
+    background: var(--color-accent-subtle);
+  }
+
+  /* Une ecriture annulee reste lisible (« rien ne s'efface ») mais se distingue
+     sans occuper de couleur de statut. */
+  tbody tr[data-annule='true'] td {
+    color: var(--color-ink-3);
+    text-decoration: line-through;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 1ms !important;
+      transition-duration: 1ms !important;
+    }
+  }
+}

@@ -1,0 +1,1 @@
+ALTER TABLE `menu_composition` ADD `prix_force_cents` integer;

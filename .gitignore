@@ -1,0 +1,31 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Secrets : CLAUDE.md §7 — jamais dans le depot.
+.env
+.env.local
+
+# Base de donnees et sauvegardes : donnees reelles, jamais versionnees.
+donnees/
+sauvegardes/
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
+# Documents generes
+sorties/
+
+# Rapports de couverture (`vitest run --coverage`). Regeneres a chaque mesure,
+# jamais relus a la main : les versionner ne ferait que du bruit de diff.
+coverage/
+
+# Captures et traces produites par les outils d'audit Playwright
+.playwright-mcp/
+*.png
+
+# Divers
+.DS_Store
+Thumbs.db
+*.log

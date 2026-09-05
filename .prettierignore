@@ -1,0 +1,25 @@
+# Prettier n'a rien a formater ici.
+#
+# Sans ce fichier, `npm run format` (qui ecrit, sans demander) reformatait aussi
+# les instantanes generes par drizzle-kit et les definitions d'agents. Un
+# fichier genere qu'on reformate a la main revient a la generation suivante :
+# le diff est pur bruit, et il masque les vraies modifications de schema.
+
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Donnees et sorties de l'application, jamais du code source (cf. eslint.config.js).
+donnees/
+sauvegardes/
+sorties/
+.playwright-mcp/
+
+# Rapports de couverture : generes par vitest, jamais edites.
+coverage/
+
+# Migrations et instantanes produits par `npm run db:generate`.
+packages/db/drizzle/
+
+# Definitions d'agents et de commandes Claude Code : outillage, pas produit.
+.claude/

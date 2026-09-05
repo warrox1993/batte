@@ -1,0 +1,1 @@
+ALTER TABLE `reception` ADD `statut` text DEFAULT 'active' NOT NULL;

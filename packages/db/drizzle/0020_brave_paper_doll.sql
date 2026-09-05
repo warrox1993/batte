@@ -1,0 +1,1 @@
+ALTER TABLE `session_marche` ADD `evenement_id` text REFERENCES evenement(id);

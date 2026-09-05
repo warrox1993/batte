@@ -1,0 +1,1 @@
+ALTER TABLE `produit_vente` ADD `volume_ml_par_unite` integer;

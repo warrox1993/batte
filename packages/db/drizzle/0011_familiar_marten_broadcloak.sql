@@ -1,0 +1,1 @@
+ALTER TABLE `lieu_marche` ADD `rayon_recherche_evenements_km` integer DEFAULT 20 NOT NULL;

@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "types": ["node"]
+  },
+  // `vitest.config.ts` est a la racine : il n'appartenait a AUCUN des deux
+  // projets TypeScript, donc il n'etait jamais type. C'est precisement le
+  // fichier qui decide quels tests s'executent — une faute de frappe dans son
+  // `include` ne se voyait nulle part, sinon a l'absence silencieuse de tests.
+  "include": [
+    "packages/core/**/*.ts",
+    "packages/db/**/*.ts",
+    "apps/api/**/*.ts",
+    "vitest.config.ts"
+  ],
+  "exclude": ["**/node_modules", "**/dist"]
+}

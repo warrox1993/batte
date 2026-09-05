@@ -1,0 +1,17 @@
+<!--
+  Favicon sobre, sur la couleur d'accent unique de l'application
+  (--color-accent, docs/06). Un fichier statique plutot qu'un data-URI dans
+  index.html : c'est ce qui supprime le 404 sur /favicon.ico dans la console.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Batte">
+  <rect width="32" height="32" rx="6" fill="#1d4ed8" />
+  <text
+    x="16"
+    y="23"
+    text-anchor="middle"
+    font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
+    font-size="20"
+    font-weight="600"
+    fill="#ffffff"
+  >B</text>
+</svg>

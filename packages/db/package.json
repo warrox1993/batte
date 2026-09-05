@@ -1,0 +1,19 @@
+{
+  "name": "@batte/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Schema Drizzle, migrations, sauvegarde et seed.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@batte/core": "*",
+    "better-sqlite3": "^12.2.0",
+    "drizzle-orm": "^0.44.4"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.16.5"
+  }
+}

@@ -1,0 +1,1 @@
+ALTER TABLE `releve_temperature` ADD `statut` text DEFAULT 'active' NOT NULL;

@@ -1,0 +1,14 @@
+{
+  "name": "@batte/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Logique metier pure et testable. Aucun acces base, aucun acces reseau.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "uuid": "^14.0.1",
+    "zod": "^4.0.10"
+  }
+}

@@ -1,0 +1,45 @@
+#!/usr/bin/env sh
+# ============================================================================
+# Gate deterministe avant chaque `git push` (husky v9).
+# Bloque le push si une etape echoue.
+#
+# Ce hook ne peut PAS lancer les agents Claude (c'est un script shell) : la
+# revue par agents se fait via la commande /pre-push dans Claude Code.
+# Pour pusher malgre tout, en urgence : `git push --no-verify`.
+# ============================================================================
+set -e
+
+echo "──────────────────────────────────────────────"
+echo "pre-push — gate qualite deterministe (Batte)"
+echo "──────────────────────────────────────────────"
+
+# Prettier n'etait VERIFIE nulle part : `format` reecrivait, et rien ne
+# controlait. 105 fichiers avaient derive avant que la dette ne soit soldee en
+# une fois, le 28/07/2026. Cette etape existe pour qu'elle ne se reconstitue
+# jamais — c'est une verification, elle ne reecrit rien.
+echo "▶ 1/5  Format (prettier --check)…"
+npm run format:check
+
+echo "▶ 2/5  Lint (eslint)…"
+npm run lint
+
+echo "▶ 3/5  Typecheck (tsc --noEmit, Node + web)…"
+npm run typecheck
+
+# `test:couverture` et non `test` : le seuil de 80 % sur packages/core
+# (CLAUDE.md §4) est declare dans vitest.config.ts, mais un `vitest run` nu ne le
+# mesure pas — il etait donc decoratif. C'est ici, et seulement ici, qu'il mord.
+# Cette etape couvre aussi la derive schema/migrations
+# (packages/db/src/schema-migrations.test.ts), ce qui evite d'appeler
+# `db:generate` depuis un hook : une commande qui ECRIT des fichiers n'a rien a
+# faire dans une verification.
+echo "▶ 4/5  Tests unitaires + couverture (vitest)…"
+npm run test:couverture
+
+# Seul le front est construit : le backend tourne directement en TypeScript
+# via tsx, il n'a aucune etape de compilation (docs/05-DECISIONS.md D-011).
+echo "▶ 5/5  Build du front (vite)…"
+npm run build
+
+echo "✅ Gate deterministe OK — push autorise."
+echo "   (Revue par les agents : lance /pre-push dans Claude Code avant de pusher.)"

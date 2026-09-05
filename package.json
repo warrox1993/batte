@@ -1,0 +1,54 @@
+{
+  "name": "batte",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ERP mono-utilisateur pour une activite de crepes ambulantes",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently --names \"api,web\" --prefix-colors \"blue,magenta\" \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm run dev --workspace @batte/api",
+    "dev:web": "npm run dev --workspace @batte/web",
+    "build": "npm run build --workspace @batte/web",
+    "start": "npm run build && npm run start:api",
+    "start:api": "npm run start --workspace @batte/api",
+    "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.web.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:couverture": "vitest run --coverage",
+    "lint": "eslint .",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json,md,css}\"",
+    "db:generate": "drizzle-kit generate --config packages/db/drizzle.config.ts",
+    "db:init": "npm run db:migrate && npm run db:seed",
+    "db:migrate": "tsx packages/db/src/migrer.ts",
+    "db:seed": "tsx packages/db/src/seed/index.ts",
+    "db:seed:demo": "tsx packages/db/src/seed/demonstration.ts",
+    "db:reset": "tsx packages/db/src/reinitialiser.ts",
+    "db:restaurer": "tsx packages/db/src/restaurer.ts",
+    "backtest": "tsx packages/db/src/scripts/backtest.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.32.0",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@vitest/coverage-v8": "^3.2.7",
+    "concurrently": "^9.2.0",
+    "drizzle-kit": "^0.31.4",
+    "eslint": "^9.32.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "jsdom": "^30.0.1",
+    "prettier": "^3.6.2",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.38.0",
+    "vitest": "^3.2.4"
+  }
+}
