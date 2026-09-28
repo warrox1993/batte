@@ -150,10 +150,11 @@ dépannage) est dans [`docs/UTILISATION.md`](docs/UTILISATION.md).
 
 Mesure du 28/09/2026 :
 
-- 4 845 tests dans 265 fichiers, en une minute environ sur mon poste : fonctions pures du cœur,
-  services SQLite, routes Fastify, écrans React montés dans jsdom avec Testing Library, rendu PDF
-  réel par Chromium. 4 832 passent ; les 13 autres sont des `it.fails` qui décrivent des défauts
-  connus et passeraient au rouge le jour où ces défauts seraient corrigés.
+- 4 848 tests dans 265 fichiers, tous verts, en une minute environ sur mon poste : fonctions
+  pures du cœur, services SQLite, routes Fastify, écrans React montés dans jsdom avec Testing
+  Library, rendu PDF réel par Chromium. Il ne reste aucun test `it.fails` : les 13 défauts
+  connus qu'ils décrivaient (double envoi par Ctrl+S, focus perdu, message de
+  confirmation invisible, sortie clavier manquante) ont été corrigés à la source.
 - Couverture (v8, Vitest 4) : 85,6 % des lignes sur l'ensemble du code, 99,8 % des lignes et
   97,5 % des branches sur `packages/core`.
 - `npm audit` : 0 vulnérabilité connue, dépendances de développement comprises.
