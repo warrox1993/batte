@@ -1132,8 +1132,16 @@ describe('Sessions — clavier (CLAUDE.md §3 règle 10)', () => {
     screen.getByLabelText('Cassées').focus();
     await utilisateur.keyboard('{Control>}s{/Control}');
 
-    await screen.findByText(/^Session du /);
-    expect(document.body).not.toHaveFocus();
+    // Test instable corrigé le 28/09/2026 (cause racine, pas de relance) :
+    // - « Session du … » vit dans l'en-tête COMMUN depuis le correctif
+    //   ci-dessus, il est donc peint AVANT la clôture et l'attendre ne
+    //   prouvait rien. Le repère du succès est la vue « Clôture enregistrée ».
+    // - La reprise de focus passe par `requestAnimationFrame` (frame suivante
+    //   de jsdom) : entre le démontage du formulaire et cette frame, le focus
+    //   est sur `<body>` de façon légitime. Une assertion synchrone lisait cet
+    //   instant intermédiaire ; il faut attendre l'état final.
+    await screen.findByText('Clôture enregistrée');
+    await waitFor(() => expect(document.body).not.toHaveFocus());
   });
 
   it(
@@ -1161,7 +1169,10 @@ describe('Sessions — clavier (CLAUDE.md §3 règle 10)', () => {
       // Corrigé le 01/08/2026 : ce n'est plus `<body>` qui hérite, mais le
       // bouton « Fermer » de la vue « Clôture enregistrée » qui remplace le
       // formulaire — la seule cible qui existe encore à cet instant.
-      expect(screen.getByRole('button', { name: 'Fermer' })).toHaveFocus();
+      // La reprise est posée dans un `requestAnimationFrame` : on attend la
+      // frame (même geste que le test du refus serveur ci-dessus), une
+      // assertion synchrone tombait avant elle (test instable du 28/09/2026).
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Fermer' })).toHaveFocus());
       expect(document.body).not.toHaveFocus();
     },
   );
