@@ -137,7 +137,7 @@ const CATALOGUE: LigneCatalogueSource[] = [
   },
 ];
 
-describe("Import du catalogue fournisseurs — 100 % ou echec", () => {
+describe('Import du catalogue fournisseurs — 100 % ou echec', () => {
   let base: BaseBatte;
 
   beforeEach(() => {
@@ -165,7 +165,10 @@ describe("Import du catalogue fournisseurs — 100 % ou echec", () => {
   it('fait entrer tous les fournisseurs, avec leur categorie de classeur', () => {
     importerCatalogue(base, FOURNISSEURS, CATALOGUE);
 
-    const n = base.select({ n: sql<number>`count(*)` }).from(fournisseur).get()!.n;
+    const n = base
+      .select({ n: sql<number>`count(*)` })
+      .from(fournisseur)
+      .get()!.n;
     expect(n).toBe(FOURNISSEURS.length);
 
     const boland = base
@@ -253,9 +256,7 @@ describe("Import du catalogue fournisseurs — 100 % ou echec", () => {
 
   it('met a jour un prix qui a change, sans creer de seconde ligne', () => {
     importerCatalogue(base, FOURNISSEURS, CATALOGUE);
-    const modifie = CATALOGUE.map((l) =>
-      l.id === 'l-complete' ? { ...l, prixCents: 2750 } : l,
-    );
+    const modifie = CATALOGUE.map((l) => (l.id === 'l-complete' ? { ...l, prixCents: 2750 } : l));
     importerCatalogue(base, FOURNISSEURS, modifie);
 
     const lignes = base
@@ -280,11 +281,7 @@ describe("Import du catalogue fournisseurs — 100 % ou echec", () => {
     importerCatalogue(base, FOURNISSEURS, CATALOGUE);
     importerCatalogue(base, FOURNISSEURS, CATALOGUE);
 
-    const f = base
-      .select()
-      .from(fournisseur)
-      .where(eq(fournisseur.id, 'biopack'))
-      .get()!;
+    const f = base.select().from(fournisseur).where(eq(fournisseur.id, 'biopack')).get()!;
     const occurrences = (f.notes ?? '').split('[categorie-classeur]').length - 1;
     expect(occurrences).toBe(1);
     expect(f.notes).toContain('Emballages');
@@ -310,9 +307,15 @@ describe("Import du catalogue fournisseurs — 100 % ou echec", () => {
   });
 
   it('ne touche pas aux ingredients existants', () => {
-    const avant = base.select({ n: sql<number>`count(*)` }).from(ingredient).get()!.n;
+    const avant = base
+      .select({ n: sql<number>`count(*)` })
+      .from(ingredient)
+      .get()!.n;
     importerCatalogue(base, FOURNISSEURS, CATALOGUE);
-    const apres = base.select({ n: sql<number>`count(*)` }).from(ingredient).get()!.n;
+    const apres = base
+      .select({ n: sql<number>`count(*)` })
+      .from(ingredient)
+      .get()!.n;
     expect(apres).toBe(avant);
   });
 });
