@@ -54,15 +54,15 @@ export function formaterMontant(centimes: Centimes): string {
   }).format(centimes / 100);
 }
 
+/** Montant saisi apres nettoyage : signe facultatif, chiffres, point decimal facultatif. */
+const MOTIF_MONTANT_SAISI = /^-?\d*(?:\.\d*)?$/;
+
 /**
  * Lit une saisie utilisateur (« 12,34 », « 12.34 », « 1 234,56 », « 12,34 € »)
  * et rend des centimes entiers. Rend `null` si la saisie n'est pas un montant :
  * c'est a l'appelant de decider quoi en faire, jamais a cette fonction de
  * deviner un zero (un zero silencieux fausse une caisse).
  */
-/** Montant saisi apres nettoyage : signe facultatif, chiffres, point decimal facultatif. */
-export const MOTIF_MONTANT_SAISI = /^-?\d*(?:\.\d*)?$/;
-
 export function parserEuros(saisie: string): Centimes | null {
   // `\s` couvre deja l'espace insecable et l'espace insecable etroit inseres par
   // Intl.NumberFormat en fr-BE : un montant copie depuis l'application est donc

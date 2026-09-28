@@ -671,6 +671,11 @@ describe('Lot 6 — pied de page : le câblage options.pied ressort de chaque ga
  * CodeQL js/file-system-race (28/09/2026) : la taille venait d'un `statSync`,
  * l'empreinte d'un `readFileSync` ulterieur. Les deux decrivent desormais le
  * MEME contenu, lu une seule fois.
+ *
+ * Limite assumee : la course elle-meme (un fichier modifie ENTRE deux appels)
+ * ne se reproduit pas de facon deterministe, et ce test passait deja avec
+ * l'ancien code. Il garde l'invariant (taille et empreinte des octets ecrits) ;
+ * la correction se lit dans `archiverFichierGenere`, qui n'appelle plus `statSync`.
  */
 describe('archiverFichierGenere — taille et empreinte d’une seule lecture', () => {
   it('archive la taille et l’empreinte exactes des octets écrits', async () => {

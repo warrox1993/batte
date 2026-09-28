@@ -4796,10 +4796,12 @@ le disque. Un appel IA est facturé, un envoi de mail part réellement chez le f
 
 Option 3. `apps/api/src/plugins/limitation-debit.ts` porte deux niveaux :
 `LIMITE_GENERATION_DOCUMENT` (30 par minute et par route : les 10 routes de
-`routes/documents.ts`, le PDF de commande, le brief avant-marché) et `LIMITE_APPEL_EXTERNE`
+`routes/documents.ts`, l'export Excel des économies, le PDF de commande, le brief avant-marché) et `LIMITE_APPEL_EXTERNE`
 (10 par minute et par route : envoi de commande par mail, les trois demandes de commentaire
 IA, la recherche d'événements). Le greffon est inscrit sur l'instance **racine**, avant les
-routes : inscrit dans un contexte encapsulé, il n'aurait vu aucune route de `/api`. Au-delà
+routes : inscrit dans un contexte encapsulé, il n'aurait vu aucune route de `/api`. Les routes
+GET limitées déclarent aussi `exposeHeadRoute: false` : la route HEAD que Fastify ajoute d'office
+exécute le même gestionnaire, et le greffon lui aurait donné un second compteur. Au-delà
 de la limite, la réponse est un **429** au format habituel
 (`{ erreur: { code: 'trop_de_demandes', message } }`, message en français).
 

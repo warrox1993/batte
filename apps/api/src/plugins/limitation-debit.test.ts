@@ -42,6 +42,7 @@ const ROUTES_LIMITEES: Readonly<Record<string, unknown>> = {
   'GET /api/exports/journal-recettes': LIMITE_GENERATION_DOCUMENT,
   'GET /api/exports/journal-achats': LIMITE_GENERATION_DOCUMENT,
   'GET /api/exports/mouvements': LIMITE_GENERATION_DOCUMENT,
+  'GET /api/exports/economies': LIMITE_GENERATION_DOCUMENT,
 };
 
 describe('limitation de débit des routes coûteuses', () => {
@@ -58,11 +59,10 @@ describe('limitation de débit des routes coûteuses', () => {
       const limite = (route.config as { rateLimit?: unknown } | undefined)?.rateLimit;
       if (limite === undefined) return;
       const methodes = Array.isArray(route.method) ? route.method : [route.method];
-      // Fastify ajoute d'office une route HEAD a chaque GET, avec la meme
-      // configuration : elle est donc limitee aussi, sans qu'on la declare.
-      for (const methode of methodes) {
-        if (methode !== 'HEAD') routesAvecLimite.set(`${methode} ${route.url}`, limite);
-      }
+      // Les routes HEAD comptent aussi : aucune ne doit exister pour une route
+      // limitee (`exposeHeadRoute: false`), sinon elle executerait la meme
+      // generation avec un compteur a part.
+      for (const methode of methodes) routesAvecLimite.set(`${methode} ${route.url}`, limite);
     });
     await app.ready();
   });
@@ -77,7 +77,7 @@ describe('limitation de débit des routes coûteuses', () => {
     expect(Object.fromEntries(routesAvecLimite)).toEqual(ROUTES_LIMITEES);
   });
 
-  it('répond 429 en français au-delà de la limite, puis rien ne passe', async () => {
+  it('répond 429 en français au-delà de la limite', async () => {
     const url = '/api/commandes/commande-inexistante/pdf';
     for (let i = 0; i < LIMITE_GENERATION_DOCUMENT.max; i++) {
       const reponse = await app.inject({ method: 'GET', url });
@@ -90,6 +90,11 @@ describe('limitation de débit des routes coûteuses', () => {
     const corps = refusee.json<ReponseErreur>();
     expect(corps.erreur.code).toBe(CODE_TROP_DE_DEMANDES);
     expect(corps.erreur.message).toMatch(/patientez une minute/);
+  });
+
+  it('ne crée pas de route HEAD pour une route limitée', async () => {
+    const reponse = await app.inject({ method: 'HEAD', url: '/api/exports/stock' });
+    expect(reponse.statusCode).toBe(404);
   });
 
   it('ne limite pas les routes de lecture ordinaires', async () => {

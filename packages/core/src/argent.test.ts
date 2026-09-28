@@ -4,7 +4,6 @@ import {
   appliquerPointsDeBase,
   formaterMontant,
   formaterPointsDeBase,
-  MOTIF_MONTANT_SAISI,
   parserEuros,
   ratioEnPointsDeBase,
   repartir,
@@ -53,17 +52,21 @@ describe('parserEuros', () => {
     expect(performance.now() - debut).toBeLessThan(500);
   });
 
-  it('le motif de saisie reconnaît exactement les mêmes chaînes que l’ancien', () => {
-    const ancien = /^-?\d*\.?\d*$/;
-    const alphabet = ['', '-', '.', '1', '9', 'x'];
+  it('accepte et refuse exactement les mêmes saisies qu’avec l’ancien motif', () => {
+    // Référence : l'ancien comportement, motif `^-?\d*\.?\d*$` compris. Les
+    // chaînes générées ne contiennent ni blanc, ni €, ni virgule : le
+    // nettoyage de `parserEuros` les laisse telles quelles.
+    const ancienParserEuros = (chaine: string): boolean =>
+      chaine !== '' && /^-?\d*\.?\d*$/.test(chaine) && Number.isFinite(Number(chaine));
+    const alphabet = ['-', '.', '1', '9', 'x'];
     // Toutes les chaînes de 0 à 4 caractères sur cet alphabet : 781 cas.
     let chaines = [''];
     for (let longueur = 0; longueur < 4; longueur++) {
-      chaines = chaines.concat(chaines.flatMap((c) => alphabet.slice(1).map((a) => c + a)));
+      chaines = chaines.concat(chaines.flatMap((c) => alphabet.map((a) => c + a)));
       chaines = [...new Set(chaines)];
     }
     for (const chaine of chaines) {
-      expect(MOTIF_MONTANT_SAISI.test(chaine), JSON.stringify(chaine)).toBe(ancien.test(chaine));
+      expect(parserEuros(chaine) !== null, JSON.stringify(chaine)).toBe(ancienParserEuros(chaine));
     }
   });
 

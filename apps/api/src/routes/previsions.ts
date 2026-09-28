@@ -1427,7 +1427,7 @@ export function routesPrevisions(
      */
     app.get(
       '/prevision/brief',
-      { config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
       async (_requete, reponse) => {
         const calcul = await previsionCourante(base, false, options.racineUrlMeteo);
         const prevision = schemaPrevision.parse(vuePrevision(base, calcul));

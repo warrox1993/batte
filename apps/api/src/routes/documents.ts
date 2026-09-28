@@ -114,7 +114,7 @@ export function routesDocuments(base: BaseBatte): FastifyPluginAsync {
     /** Fiche technique d'une VERSION de recette (`docs/01` module 1). */
     app.get<{ Params: { id: string } }>(
       '/documents/fiche-technique/:id',
-      { config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
       async (requete, reponse) => {
         const donnees = donneesFicheTechnique(base, requete.params.id);
         if (donnees === null) throw new ErreurIntrouvable('Recette', requete.params.id);
@@ -143,7 +143,7 @@ export function routesDocuments(base: BaseBatte): FastifyPluginAsync {
      */
     app.get(
       '/documents/affichette-allergenes',
-      { config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
       async (_requete, reponse) => {
         const donnees = donneesAffichetteAllergenes(base);
         if (donnees.produits.length === 0) {
@@ -177,7 +177,7 @@ export function routesDocuments(base: BaseBatte): FastifyPluginAsync {
      */
     app.get<{ Params: { id: string } }>(
       '/documents/etiquette-bac/:id',
-      { config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
       async (requete, reponse) => {
         const production = lireProductionDetail(base, requete.params.id);
         if (production === null) throw new ErreurIntrouvable('Production', requete.params.id);
@@ -214,7 +214,7 @@ export function routesDocuments(base: BaseBatte): FastifyPluginAsync {
      */
     app.get<{ Params: { id: string } }>(
       '/documents/rapport-session/:id',
-      { config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
       async (requete, reponse) => {
         const statut = statutSession(base, requete.params.id);
         if (statut === null) throw new ErreurIntrouvable('Session', requete.params.id);
@@ -252,7 +252,7 @@ export function routesDocuments(base: BaseBatte): FastifyPluginAsync {
      */
     app.get<{ Querystring: { periode?: string } }>(
       '/documents/registre-afsca',
-      { config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
       async (requete, reponse) => {
         const { periode } = schemaPeriodeMensuelle.parse(requete.query);
         const annee = Number.parseInt(periode.slice(0, 4), 10);
@@ -317,7 +317,7 @@ export function routesDocuments(base: BaseBatte): FastifyPluginAsync {
      */
     app.get<{ Params: { lot: string } }>(
       '/documents/fiche-rappel/:lot',
-      { config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
       async (requete, reponse) => {
         const aval = tracabiliteAvalLot(base, requete.params.lot);
         const donnees = donneesFicheRappelLot(base, aval.lotId);
@@ -345,7 +345,7 @@ export function routesDocuments(base: BaseBatte): FastifyPluginAsync {
     /** Etat de stock valorise a aujourd'hui (`docs/01` module 2). */
     app.get(
       '/exports/stock',
-      { config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
       async (_requete, reponse) => {
         const jour = aujourdHui();
         const donnees = donneesExportStock(base, jour);
@@ -364,7 +364,7 @@ export function routesDocuments(base: BaseBatte): FastifyPluginAsync {
     /** Journal des recettes de l'exercice — obligatoire sous franchise de TVA. */
     app.get<{ Querystring: { annee?: string } }>(
       '/exports/journal-recettes',
-      { config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
       async (requete, reponse) => {
         const { annee } = schemaExercice.parse(requete.query);
         const donnees = donneesJournalRecettes(base, annee);
@@ -383,7 +383,7 @@ export function routesDocuments(base: BaseBatte): FastifyPluginAsync {
     /** Journal des achats de l'exercice, une ligne par reception. */
     app.get<{ Querystring: { annee?: string } }>(
       '/exports/journal-achats',
-      { config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
       async (requete, reponse) => {
         const { annee } = schemaExercice.parse(requete.query);
         const donnees = donneesJournalAchats(base, annee);
@@ -402,7 +402,7 @@ export function routesDocuments(base: BaseBatte): FastifyPluginAsync {
     /** Journal complet des mouvements de stock — la tracabilite exigee par l'AFSCA. */
     app.get<{ Querystring: { annee?: string } }>(
       '/exports/mouvements',
-      { config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
       async (requete, reponse) => {
         const { annee } = schemaExercice.parse(requete.query);
         const donnees = donneesExportMouvements(base, annee);

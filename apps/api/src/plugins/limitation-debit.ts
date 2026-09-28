@@ -23,6 +23,11 @@ import type { RateLimitPluginOptions } from '@fastify/rate-limit';
 /**
  * Generation de document (PDF, classeur Excel) : un clic humain, meme repete,
  * reste tres en dessous. 30 par minute et par route.
+ *
+ * Les routes GET qui l'utilisent declarent aussi `exposeHeadRoute: false` : la
+ * route HEAD que Fastify ajoute d'office execute le MEME gestionnaire (donc
+ * genere et archive), mais le greffon lui donne son propre compteur. Sans
+ * cela, HEAD offrait un second budget de 30 generations par minute.
  */
 export const LIMITE_GENERATION_DOCUMENT = { max: 30, timeWindow: '1 minute' } as const;
 
@@ -43,8 +48,9 @@ export const CODE_TROP_DE_DEMANDES = 'trop_de_demandes';
  */
 export const OPTIONS_LIMITATION_DEBIT: RateLimitPluginOptions = {
   global: false,
-  // L'erreur rendue passe par le gestionnaire unique (`plugins/erreurs.ts`),
-  // qui en fait un corps `{ erreur: { code, message } }` en francais.
+  // L'objet leve passe par le gestionnaire unique (`plugins/erreurs.ts`) : il
+  // n'en garde que le statut et le `code`, et remplace le message par sa
+  // phrase francaise du 429. Le `message` ci-dessous ne sert qu'au journal.
   errorResponseBuilder: (_requete, contexte) => ({
     statusCode: contexte.statusCode,
     code: CODE_TROP_DE_DEMANDES,

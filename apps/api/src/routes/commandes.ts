@@ -117,7 +117,7 @@ export function routesCommandes(base: BaseBatte): FastifyPluginAsync {
      */
     app.get<{ Params: { id: string } }>(
       '/commandes/:id/pdf',
-      { config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
       async (requete, reponse) => {
         const detail = lireCommandeDetail(base, requete.params.id);
         if (detail === null) throw new ErreurIntrouvable('Commande', requete.params.id);
