@@ -1373,7 +1373,7 @@ describe('Ingrédients — attente d’écriture : la FICHE l’annonce, puis re
         2. Un second clic ou une Entrée sur CE bouton ne prouveraient rien :
         `disabled` natif, bloqué par le navigateur lui-même (même mise en
         garde que `SaisieSortie.montage.test.tsx`, ligne ~490). Le chemin qui
-        contourne RÉELLEMENT ce bouton est Ctrl+S — voir le `it.fails`
+        contourne RÉELLEMENT ce bouton est Ctrl+S — voir le test (ex-`it.fails`)
         ci-dessous, qui montre qu'aucun garde-fou interne ne le bloque, lui.
       */
 
@@ -1447,7 +1447,7 @@ describe('Ingrédients — attente d’écriture : le CONDITIONNEMENT l’annonc
 });
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Défaut RÉEL trouvé en lisant la production — NON corrigé ici (hors mandat)
+   Défaut RÉEL trouvé en lisant la production — corrigé le 28/09/2026
    ═══════════════════════════════════════════════════════════════════════════ */
 
 describe('Ingrédients — défaut RÉEL : Ctrl+S contourne le `disabled`, SANS garde-fou interne', () => {
@@ -1461,49 +1461,46 @@ describe('Ingrédients — défaut RÉEL : Ctrl+S contourne le `disabled`, SANS 
    * `enregistrer()` DIRECTEMENT depuis le conteneur englobant (`onKeyDown` en
    * tête de l'écran, `Ingredients.tsx`), sans passer par ce bouton : un second
    * Ctrl+S pendant l'aller-retour envoie donc une SECONDE écriture PATCH sur
-   * le même ingrédient. Trouvé en lisant la production le 02/08/2026 ; pas
-   * corrigé ici, hors zone d'écriture de cette mission.
+   * le même ingrédient. Trouvé en lisant la production le 02/08/2026 ; CORRIGÉ
+   * le 28/09/2026 par une garde en tête de `enregistrer()`. Le test, en
+   * `it.fails` jusque-là, est devenu un test ordinaire.
    */
-  it.fails(
-    'un second Ctrl+S PENDANT l’aller-retour ne devrait PAS déclencher une seconde écriture',
-    async () => {
-      const utilisateur = userEvent.setup();
-      await monterPret();
-      await utilisateur.click(rangee('Farine de froment T55'));
+  it('un second Ctrl+S PENDANT l’aller-retour ne devrait PAS déclencher une seconde écriture', async () => {
+    const utilisateur = userEvent.setup();
+    await monterPret();
+    await utilisateur.click(rangee('Farine de froment T55'));
 
-      const modifie = ingredient({ stockSecurite: 8_000 });
-      const resolveurs: Array<(valeur: unknown) => void> = [];
-      appelApi.mockImplementation(async (chemin: string) => {
-        if (chemin === '/ingredients/ing-farine-t55') {
-          return new Promise((resoudre) => resolveurs.push(resoudre));
-        }
-        if (chemin === '/referentiel/ingredients')
-          return { data: [modifie, VERGEOISE], meta: { total: 2 } };
-        if (chemin === '/conditionnements')
-          return { data: [conditionnement()], meta: { total: 1 } };
-        if (chemin === '/fournisseurs')
-          return { data: [FOURNISSEUR, INVENTAIRE_OUVERTURE], meta: { total: 2 } };
-        throw new Error(`Chemin non prévu : ${chemin}`);
-      });
-
-      const stock = screen.getByRole('textbox', { name: /^Stock de sécurité/ });
-      await utilisateur.clear(stock);
-      await utilisateur.type(stock, '8000');
-      stock.focus();
-      await utilisateur.keyboard('{Control>}s{/Control}');
-      // PENDANT l'aller-retour : le bouton est déjà inerte…
-      expect(boutonEnregistrer()).toBeDisabled();
-
-      try {
-        // …mais Ctrl+S, LUI, ne passe pas par ce bouton.
-        await utilisateur.keyboard('{Control>}s{/Control}');
-
-        expect(
-          appelApi.mock.calls.filter(([c]) => c === '/ingredients/ing-farine-t55'),
-        ).toHaveLength(1);
-      } finally {
-        resolveurs.forEach((resoudre) => resoudre(modifie));
+    const modifie = ingredient({ stockSecurite: 8_000 });
+    const resolveurs: Array<(valeur: unknown) => void> = [];
+    appelApi.mockImplementation(async (chemin: string) => {
+      if (chemin === '/ingredients/ing-farine-t55') {
+        return new Promise((resoudre) => resolveurs.push(resoudre));
       }
-    },
-  );
+      if (chemin === '/referentiel/ingredients')
+        return { data: [modifie, VERGEOISE], meta: { total: 2 } };
+      if (chemin === '/conditionnements') return { data: [conditionnement()], meta: { total: 1 } };
+      if (chemin === '/fournisseurs')
+        return { data: [FOURNISSEUR, INVENTAIRE_OUVERTURE], meta: { total: 2 } };
+      throw new Error(`Chemin non prévu : ${chemin}`);
+    });
+
+    const stock = screen.getByRole('textbox', { name: /^Stock de sécurité/ });
+    await utilisateur.clear(stock);
+    await utilisateur.type(stock, '8000');
+    stock.focus();
+    await utilisateur.keyboard('{Control>}s{/Control}');
+    // PENDANT l'aller-retour : le bouton est déjà inerte…
+    expect(boutonEnregistrer()).toBeDisabled();
+
+    try {
+      // …mais Ctrl+S, LUI, ne passe pas par ce bouton.
+      await utilisateur.keyboard('{Control>}s{/Control}');
+
+      expect(appelApi.mock.calls.filter(([c]) => c === '/ingredients/ing-farine-t55')).toHaveLength(
+        1,
+      );
+    } finally {
+      resolveurs.forEach((resoudre) => resoudre(modifie));
+    }
+  });
 });

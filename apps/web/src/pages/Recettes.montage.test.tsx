@@ -849,7 +849,7 @@ describe('Recettes — attente d’écriture : la FICHE l’annonce, puis redevi
         appelle la MÊME fonction `enregistrer()` que ce bouton (pas un chemin
         distinct), ne le contourne donc PAS — à la différence du bouton de la
         création rapide d'ingrédient, ci-dessous, contourné par un chemin
-        clavier DIFFÉRENT (voir le `it.fails` plus bas).
+        clavier DIFFÉRENT (voir le test (ex-`it.fails`) plus bas).
       */
 
       repondre?.(DETAIL_R2);
@@ -927,7 +927,7 @@ describe('Recettes — attente d’écriture : la création rapide d’ingrédie
 });
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Défaut RÉEL trouvé en lisant la production — NON corrigé ici (hors mandat)
+   Défaut RÉEL trouvé en lisant la production — corrigé le 28/09/2026
    ═══════════════════════════════════════════════════════════════════════════ */
 
 describe('Recettes — défaut RÉEL : la création rapide d’ingrédient n’a AUCUN garde-fou contre un second envoi', () => {
@@ -945,50 +945,46 @@ describe('Recettes — défaut RÉEL : la création rapide d’ingrédient n’a
    * seconde touche Entrée dans le champ « Nom », PENDANT l'aller-retour,
    * envoie donc un second `POST /ingredients` — un doublon de référentiel,
    * retenu ou non selon le seul hasard d'une réponse déjà revenue. Trouvé en
-   * lisant la production le 02/08/2026 ; pas corrigé ici, hors zone
-   * d'écriture de cette mission.
+   * lisant la production le 02/08/2026 ; CORRIGÉ le 28/09/2026 par la garde
+   * `if (creationIngredient.envoi) return;`. Le test, en `it.fails`
+   * jusque-là, est devenu un test ordinaire.
    */
-  it.fails(
-    'une seconde touche Entrée PENDANT l’envoi ne devrait PAS partir en second POST /ingredients',
-    async () => {
-      const resolveurs: Array<(valeur: unknown) => void> = [];
-      brancherApi({
-        ...reponsesNominales(),
-        'POST /ingredients': () => new Promise((resoudre) => resolveurs.push(resoudre)),
-      });
-      monter();
+  it('une seconde touche Entrée PENDANT l’envoi ne devrait PAS partir en second POST /ingredients', async () => {
+    const resolveurs: Array<(valeur: unknown) => void> = [];
+    brancherApi({
+      ...reponsesNominales(),
+      'POST /ingredients': () => new Promise((resoudre) => resolveurs.push(resoudre)),
+    });
+    monter();
 
-      await userEvent.click(await screen.findByRole('row', { name: /Pâte sarrasin-châtaigne/ }));
-      await userEvent.click(await screen.findByRole('button', { name: 'Modifier cette version' }));
-      await userEvent.click(screen.getByRole('button', { name: 'Ajouter un ingrédient' }));
-      await userEvent.selectOptions(
-        screen.getByRole('combobox', { name: 'Ingrédient de la ligne 1' }),
-        screen.getByRole('option', { name: '+ Créer un nouvel ingrédient…' }),
-      );
+    await userEvent.click(await screen.findByRole('row', { name: /Pâte sarrasin-châtaigne/ }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Modifier cette version' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Ajouter un ingrédient' }));
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: 'Ingrédient de la ligne 1' }),
+      screen.getByRole('option', { name: '+ Créer un nouvel ingrédient…' }),
+    );
 
-      const nom = screen.getByRole('textbox', { name: 'Nom' });
-      await userEvent.type(nom, 'Cannelle');
-      await userEvent.click(
+    const nom = screen.getByRole('textbox', { name: 'Nom' });
+    await userEvent.type(nom, 'Cannelle');
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Créer et utiliser dans cette ligne' }),
+    );
+
+    try {
+      expect(
         screen.getByRole('button', { name: 'Créer et utiliser dans cette ligne' }),
-      );
+      ).toBeDisabled();
+      // Entrée dans le champ NE PASSE PAS par ce bouton `disabled`.
+      await userEvent.type(nom, '{Enter}');
 
-      try {
-        expect(
-          screen.getByRole('button', { name: 'Créer et utiliser dans cette ligne' }),
-        ).toBeDisabled();
-        // Entrée dans le champ NE PASSE PAS par ce bouton `disabled`.
-        await userEvent.type(nom, '{Enter}');
-
-        expect(
-          appelApi.mock.calls.filter(
-            ([chemin, options]) => chemin === '/ingredients' && options?.method === 'POST',
-          ),
-        ).toHaveLength(1);
-      } finally {
-        resolveurs.forEach((resoudre) =>
-          resoudre(ingredient({ id: 'i-cannelle', nom: 'Cannelle' })),
-        );
-      }
-    },
-  );
+      expect(
+        appelApi.mock.calls.filter(
+          ([chemin, options]) => chemin === '/ingredients' && options?.method === 'POST',
+        ),
+      ).toHaveLength(1);
+    } finally {
+      resolveurs.forEach((resoudre) => resoudre(ingredient({ id: 'i-cannelle', nom: 'Cannelle' })));
+    }
+  });
 });

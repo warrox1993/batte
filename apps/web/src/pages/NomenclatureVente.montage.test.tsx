@@ -463,7 +463,7 @@ describe('Nomenclature de vente — l’état d’enregistrement, observé PENDA
   });
 
   /**
-   * ═══ DÉFAUT RÉEL, NON CORRIGÉ (hors zone d'écriture de cette mission) ═══
+   * ═══ DÉFAUT RÉEL, CORRIGÉ LE 28/09/2026 (était en `it.fails`) ═══
    *
    * Même défaut que sur `Produits.tsx`, `Menus.tsx`, `LieuxMarche.tsx` et
    * `Equipements.tsx` : `enregistrer()` (`NomenclatureVente.tsx`) ne consulte
@@ -475,48 +475,46 @@ describe('Nomenclature de vente — l’état d’enregistrement, observé PENDA
    * requête POST — un composant de nomenclature déclaré deux fois, donc
    * compté deux fois dans le coût matière d'une vente.
    *
-   * Ce test échoue intentionnellement : il décrit le comportement SAIN (une
-   * seule requête), que le code actuel ne tient pas.
+   * Ce test décrit le comportement SAIN (une seule requête). Il était en
+   * `it.fails` jusqu'au correctif : une garde en tête de `enregistrer()`
+   * refuse un second départ tant que le premier est en vol.
    */
-  it.fails(
-    'DÉFAUT RÉEL : un second Ctrl+S pendant l’envoi contourne le bouton `disabled` et poste une deuxième fois',
-    async () => {
-      const resolveurs: Array<(valeur: unknown) => void> = [];
-      const poster = vi.fn(() => new Promise((resoudre) => resolveurs.push(resoudre)));
-      brancherApi({ ...reponsesNominales(), 'POST /produits/p-cafe/composants': poster });
-      monter();
-      await choisirLeCafe();
-      await screen.findByRole('row', { name: /Gobelet carton/ });
+  it('un second Ctrl+S pendant l’envoi ne contourne plus le bouton `disabled` : une seule requête (défaut corrigé le 28/09/2026)', async () => {
+    const resolveurs: Array<(valeur: unknown) => void> = [];
+    const poster = vi.fn(() => new Promise((resoudre) => resolveurs.push(resoudre)));
+    brancherApi({ ...reponsesNominales(), 'POST /produits/p-cafe/composants': poster });
+    monter();
+    await choisirLeCafe();
+    await screen.findByRole('row', { name: /Gobelet carton/ });
 
-      await userEvent.selectOptions(
-        screen.getByRole('combobox', { name: /Ingrédient consommé/ }),
-        'i-gobelet',
-      );
-      const champQuantite = screen.getByRole('textbox', { name: /Quantité consommée/ });
-      await userEvent.type(champQuantite, '1');
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: /Ingrédient consommé/ }),
+      'i-gobelet',
+    );
+    const champQuantite = screen.getByRole('textbox', { name: /Quantité consommée/ });
+    await userEvent.type(champQuantite, '1');
 
-      await userEvent.keyboard('{Control>}s{/Control}');
-      expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeDisabled();
+    await userEvent.keyboard('{Control>}s{/Control}');
+    expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeDisabled();
 
-      // Le bouton est déjà `disabled` — et pourtant rien n'empêche ce second
-      // Ctrl+S d'appeler `enregistrer()` une deuxième fois.
-      await userEvent.keyboard('{Control>}s{/Control}');
+    // Le bouton est déjà `disabled` — et pourtant rien n'empêche ce second
+    // Ctrl+S d'appeler `enregistrer()` une deuxième fois.
+    await userEvent.keyboard('{Control>}s{/Control}');
 
-      // Toujours résoudre AVANT l'assertion qui échoue, sinon les promesses
-      // fuient dans le test suivant.
-      resolveurs.forEach((r) =>
-        r(
-          composant({
-            id: 'cv-new',
-            ingredientId: 'i-gobelet',
-            nomIngredient: 'Gobelet carton 25 cl',
-          }),
-        ),
-      );
+    // Toujours résoudre AVANT l'assertion qui échoue, sinon les promesses
+    // fuient dans le test suivant.
+    resolveurs.forEach((r) =>
+      r(
+        composant({
+          id: 'cv-new',
+          ingredientId: 'i-gobelet',
+          nomIngredient: 'Gobelet carton 25 cl',
+        }),
+      ),
+    );
 
-      expect(poster).toHaveBeenCalledTimes(1);
-    },
-  );
+    expect(poster).toHaveBeenCalledTimes(1);
+  });
 });
 
 /* ═══════════════════════════════════════════════════════════════════════════

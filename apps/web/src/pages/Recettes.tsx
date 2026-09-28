@@ -1458,6 +1458,10 @@ export default function Recettes() {
    */
   function creerIngredientRapide(): void {
     if (creationIngredient === null) return;
+    // Garde contre le doublon de référentiel (défaut connu corrigé le
+    // 28/09/2026) : le bouton est `disabled` pendant l'envoi, mais la touche
+    // Entrée du mini-formulaire appelle cette fonction sans passer par lui.
+    if (creationIngredient.envoi) return;
     const b = creationIngredient.brouillon;
     const ligneIndex = creationIngredient.ligneIndex;
 

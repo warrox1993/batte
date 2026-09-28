@@ -703,7 +703,7 @@ describe('Menus — l’état d’enregistrement de la composition, observé PEN
   });
 
   /**
-   * ═══ DÉFAUT RÉEL, NON CORRIGÉ (hors zone d'écriture de cette mission) ═══
+   * ═══ DÉFAUT RÉEL, CORRIGÉ LE 28/09/2026 (était en `it.fails`) ═══
    *
    * Même défaut que sur `Produits.tsx` et `LieuxMarche.tsx` : `enregistrer()`
    * (`Menus.tsx`) ne consulte jamais `enregistrement` avant de reposter. Le
@@ -714,50 +714,48 @@ describe('Menus — l’état d’enregistrement de la composition, observé PEN
    * repart en DEUXIÈME requête POST — deux lignes de composition pour une
    * seule intention.
    *
-   * Ce test échoue intentionnellement : il décrit le comportement SAIN (une
-   * seule requête), que le code actuel ne tient pas.
+   * Ce test décrit le comportement SAIN (une seule requête). Il était en
+   * `it.fails` jusqu'au correctif : une garde en tête de `enregistrer()`
+   * refuse un second départ tant que le premier est en vol.
    */
-  it.fails(
-    'DÉFAUT RÉEL : un second Ctrl+S pendant l’envoi contourne le bouton `disabled` et poste une deuxième fois',
-    async () => {
-      const resolveurs: Array<(valeur: unknown) => void> = [];
-      const poster = vi.fn(() => new Promise((resoudre) => resolveurs.push(resoudre)));
-      brancherApi({ ...reponsesNominales(120), 'POST /menus/p-menu/composition': poster });
-      monter();
-      await choisirLeMenu();
-      await screen.findByRole('columnheader', { name: 'Part du prix (€)' });
+  it('un second Ctrl+S pendant l’envoi ne contourne plus le bouton `disabled` : une seule requête (défaut corrigé le 28/09/2026)', async () => {
+    const resolveurs: Array<(valeur: unknown) => void> = [];
+    const poster = vi.fn(() => new Promise((resoudre) => resolveurs.push(resoudre)));
+    brancherApi({ ...reponsesNominales(120), 'POST /menus/p-menu/composition': poster });
+    monter();
+    await choisirLeMenu();
+    await screen.findByRole('columnheader', { name: 'Part du prix (€)' });
 
-      await userEvent.selectOptions(
-        screen.getByRole('combobox', { name: /Produit inclus/ }),
-        'p-crepe',
-      );
-      const champQuantite = screen.getByRole('textbox', { name: /Quantité dans le menu/ });
-      await userEvent.type(champQuantite, '2');
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: /Produit inclus/ }),
+      'p-crepe',
+    );
+    const champQuantite = screen.getByRole('textbox', { name: /Quantité dans le menu/ });
+    await userEvent.type(champQuantite, '2');
 
-      await userEvent.keyboard('{Control>}s{/Control}');
-      expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeDisabled();
+    await userEvent.keyboard('{Control>}s{/Control}');
+    expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeDisabled();
 
-      // Le bouton est déjà `disabled` — et pourtant rien n'empêche ce second
-      // Ctrl+S d'appeler `enregistrer()` une deuxième fois.
-      await userEvent.keyboard('{Control>}s{/Control}');
+    // Le bouton est déjà `disabled` — et pourtant rien n'empêche ce second
+    // Ctrl+S d'appeler `enregistrer()` une deuxième fois.
+    await userEvent.keyboard('{Control>}s{/Control}');
 
-      // Toujours résoudre AVANT l'assertion qui échoue, sinon les promesses
-      // fuient dans le test suivant.
-      resolveurs.forEach((r) =>
-        r({
-          id: 'c-new',
-          menuId: 'p-menu',
-          produitInclusId: 'p-crepe',
-          nomProduitInclus: 'Crêpe froment nature',
-          nature: 'transforme',
-          quantite: 2,
-          prixCatalogueCents: 350,
-          actif: true,
-          prixForceCents: null,
-        } satisfies CompositionMenu),
-      );
+    // Toujours résoudre AVANT l'assertion qui échoue, sinon les promesses
+    // fuient dans le test suivant.
+    resolveurs.forEach((r) =>
+      r({
+        id: 'c-new',
+        menuId: 'p-menu',
+        produitInclusId: 'p-crepe',
+        nomProduitInclus: 'Crêpe froment nature',
+        nature: 'transforme',
+        quantite: 2,
+        prixCatalogueCents: 350,
+        actif: true,
+        prixForceCents: null,
+      } satisfies CompositionMenu),
+    );
 
-      expect(poster).toHaveBeenCalledTimes(1);
-    },
-  );
+    expect(poster).toHaveBeenCalledTimes(1);
+  });
 });
