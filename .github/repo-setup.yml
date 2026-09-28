@@ -77,9 +77,8 @@ settings:
   # Supprime la branche distante après fusion (sinon chaque fusion faite depuis une worktree du
   # kit laisse traîner la branche, voir tagout#185).
   delete_branch_on_merge: true
-  # ÉCART ASSUMÉ AVEC LE KIT (qui veut « squash » seul) : JB fusionne ses PR en commit de fusion
-  # normal pour garder l'historique détaillé des commits (#1, #2, #3). On le garde autorisé, et
-  # le profil déclare « Merge mode: merge ». Le rebase n'a jamais servi : désactivé comme dans le kit.
+  # Décision de JB du 28/09/2026 : fusion squash seule, comme le kit (historique linéaire, le
+  # titre de la PR devient le commit). Les anciennes PR ont été fusionnées en commit de fusion.
   allow_squash_merge: true
-  allow_merge_commit: true
+  allow_merge_commit: false
   allow_rebase_merge: false
