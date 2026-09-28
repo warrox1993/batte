@@ -42,10 +42,10 @@
 - `npx vitest run`
 
 ## Integration style
-- **Merge mode:** merge — commit de fusion normal, choix de JB pour garder l'historique détaillé
-  des commits (#1, #2, #3). Le kit fusionne en squash par défaut : passer
-  `guarded-pr-merge.sh <PR> -- --merge --delete-branch`. Squash reste autorisé dans les réglages,
-  rebase désactivé (`.github/repo-setup.yml`).
+- **Merge mode:** squash — décision de JB du 28/09/2026 : fusion squash seule, comme le kit
+  (commit de fusion et rebase désactivés dans `.github/repo-setup.yml`). Le titre de la PR devient
+  le sujet du commit sur la branche par défaut, suivi de `(#<PR>)` ; `merge-pr` et
+  `guarded-pr-merge.sh` fusionnent ainsi par défaut. Historique antérieur : commits de fusion.
 - **PR title convention:** pas de contrôle de titre en CI. Commits conventionnels en français
   (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `ci:`, `chore:`, `perf:` — `CLAUDE.md` §4) ;
   titre de PR au même format, terminé par `(#<issue>)` quand une issue existe. Sujet du commit de
