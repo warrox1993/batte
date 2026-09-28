@@ -1524,7 +1524,7 @@ describe('Sessions — l’attente pendant un envoi (promesse contrôlée)', () 
 
 describe('Sessions — `AnalyseEcartClaude` : défaut de focus trouvé en lecture', () => {
   /**
-   * ═══ DÉFAUT RÉEL, NON CORRIGÉ ═══
+   * ═══ DÉFAUT RÉEL, CORRIGÉ LE 28/09/2026 (était en `it.fails`) ═══
    *
    * Le bouton « Demander une analyse » n'est rendu que sous `{etat.statut
    * === 'inactif' && …}` (`Sessions.tsx`, fonction `AnalyseEcartClaude`). Au
@@ -1555,39 +1555,92 @@ describe('Sessions — `AnalyseEcartClaude` : défaut de focus trouvé en lectur
    * à `Sessions.tsx`, hors de la zone d'écriture de cette mission : voir le
    * rapport de livraison.
    */
-  it.fails(
-    'DÉFAUT CONNU — cliquer « Demander une analyse » perd le focus au profit de `<body>`',
-    async () => {
-      const utilisateur = userEvent.setup();
-      const SESSION_CLOTUREE: SessionResume = {
-        ...SESSION_PLANIFIEE,
-        id: 'ses-close',
-        numero: 'SM-2026-0001',
-        dateSession: '2026-07-26',
-        statut: 'cloturee',
-      };
-      routerLectures({
-        sessions: [SESSION_CLOTUREE],
-        detail: detailSession({ ...SESSION_CLOTUREE, dateCloture: '2026-07-26T18:00:00.000Z' }),
-      });
-      monter();
-      await utilisateur.click(await screen.findByText('26/07/2026'));
-      await screen.findByRole('button', { name: 'Fermer' });
+  it('cliquer « Demander une analyse » garde le focus sur le bouton pendant l’attente (défaut corrigé le 28/09/2026)', async () => {
+    const utilisateur = userEvent.setup();
+    const SESSION_CLOTUREE: SessionResume = {
+      ...SESSION_PLANIFIEE,
+      id: 'ses-close',
+      numero: 'SM-2026-0001',
+      dateSession: '2026-07-26',
+      statut: 'cloturee',
+    };
+    routerLectures({
+      sessions: [SESSION_CLOTUREE],
+      detail: detailSession({ ...SESSION_CLOTUREE, dateCloture: '2026-07-26T18:00:00.000Z' }),
+    });
+    monter();
+    await utilisateur.click(await screen.findByText('26/07/2026'));
+    await screen.findByRole('button', { name: 'Fermer' });
 
-      // Requête qui ne répond JAMAIS : ce test ne mesure QUE la transition de
-      // rendu déclenchée par `setEtat({ statut: 'en_cours' })`, pas ce qui
-      // suivrait une réponse.
-      appelApi.mockImplementation(() => new Promise(() => {}));
+    // Requête qui ne répond JAMAIS : ce test ne mesure QUE la transition de
+    // rendu déclenchée par `setEtat({ statut: 'en_cours' })`, pas ce qui
+    // suivrait une réponse.
+    appelApi.mockImplementation(() => new Promise(() => {}));
 
-      const bouton = screen.getByRole('button', { name: 'Demander une analyse' });
-      bouton.focus();
-      expect(bouton).toHaveFocus();
-      await utilisateur.click(bouton);
+    const bouton = screen.getByRole('button', { name: 'Demander une analyse' });
+    bouton.focus();
+    expect(bouton).toHaveFocus();
+    await utilisateur.click(bouton);
 
-      // CE QUE CE TEST ATTEND, et qui échoue aujourd'hui : un contrôle
-      // focalisable garde la main pendant l'attente, comme partout ailleurs
-      // dans ce fichier (Ctrl+S sur « Enregistrer », l'annulation de session).
-      expect(document.body).not.toHaveFocus();
-    },
-  );
+    // CE QUE CE TEST ATTEND (tenu depuis le 28/09/2026) : un contrôle
+    // focalisable garde la main pendant l'attente, comme partout ailleurs
+    // dans ce fichier (Ctrl+S sur « Enregistrer », l'annulation de session).
+    expect(document.body).not.toHaveFocus();
+  });
+
+  /** Ouvre une session close et rend le bouton « Demander une analyse ». */
+  async function ouvrirSessionClose(): Promise<{
+    utilisateur: ReturnType<typeof userEvent.setup>;
+    bouton: HTMLElement;
+  }> {
+    const utilisateur = userEvent.setup();
+    const SESSION_CLOTUREE: SessionResume = {
+      ...SESSION_PLANIFIEE,
+      id: 'ses-close',
+      numero: 'SM-2026-0001',
+      dateSession: '2026-07-26',
+      statut: 'cloturee',
+    };
+    routerLectures({
+      sessions: [SESSION_CLOTUREE],
+      detail: detailSession({ ...SESSION_CLOTUREE, dateCloture: '2026-07-26T18:00:00.000Z' }),
+    });
+    monter();
+    await utilisateur.click(await screen.findByText('26/07/2026'));
+    await screen.findByRole('button', { name: 'Fermer' });
+    return { utilisateur, bouton: screen.getByRole('button', { name: 'Demander une analyse' }) };
+  }
+
+  it('pendant l’attente, le bouton l’annonce et un second clic ne repart PAS en réseau (un appel Claude coûte)', async () => {
+    const { utilisateur, bouton } = await ouvrirSessionClose();
+    appelApi.mockImplementation(() => new Promise(() => {}));
+
+    await utilisateur.click(bouton);
+    const enAttente = screen.getByRole('button', { name: 'Claude réfléchit…' });
+    expect(enAttente).toHaveAttribute('aria-disabled', 'true');
+    await utilisateur.click(enAttente);
+
+    expect(
+      appelApi.mock.calls.filter(([chemin]) => chemin === '/ia/analyse-ecart/ses-close'),
+    ).toHaveLength(1);
+  });
+
+  it('à la réponse, le focus passe du bouton (démonté) au résultat qui le remplace, jamais à `<body>`', async () => {
+    const { utilisateur, bouton } = await ouvrirSessionClose();
+    let repondre: ((valeur: unknown) => void) | undefined;
+    appelApi.mockImplementation(
+      () =>
+        new Promise((resoudre) => {
+          repondre = resoudre;
+        }),
+    );
+
+    bouton.focus();
+    await utilisateur.click(bouton);
+    repondre?.({ disponible: true, texte: 'Écart dû à la pluie.', coutCents: 2 });
+
+    const texte = await screen.findByText('Écart dû à la pluie.');
+    await waitFor(() => expect(texte.parentElement).toHaveFocus());
+    expect(document.body).not.toHaveFocus();
+  });
 });

@@ -23,7 +23,6 @@ import {
   ratioEnPointsDeBase,
   rapprocherCaisse,
   resoudreCrepesDepuisVolumeRestant,
-  schemaCommentaireIa,
   schemaLieuMarche,
   schemaListeEquipements,
   schemaListeLieuxComplets,
@@ -37,7 +36,6 @@ import {
   titreEcoulement,
   totaliserVentes,
   type ClotureSession,
-  type CommentaireIa,
   type CompteurSeuilContrat,
   type EcartStockVente,
   type Equipement,
@@ -63,6 +61,7 @@ import { PastilleStatut } from '../composants/affichage';
 import { Panneau } from '../composants/Panneau';
 import { Tableau, type ColonneTableau } from '../composants/Tableau';
 import { EtatVide } from '../composants/EtatVide';
+import { DemandeClaude } from '../composants/DemandeClaude';
 import { MessageErreur, natureDuRefus, type NatureRefus } from '../composants/EncartErreur';
 import { ErreurApi, requeteApi } from '../lib/api';
 import { aujourdHui } from '../lib/dates';
@@ -1425,12 +1424,6 @@ export function formaterCoutAppelIa(coutCents: number): string {
   return `Coût de cet appel : ${formaterEuros(coutCents)}.`;
 }
 
-type EtatAnalyseEcart =
-  | { statut: 'inactif' }
-  | { statut: 'en_cours' }
-  | { statut: 'recu'; commentaire: CommentaireIa }
-  | { statut: 'erreur'; message: string };
-
 /**
  * Analyse d'écart Claude, à la demande (mission du 31/07/2026).
  *
@@ -1457,10 +1450,15 @@ type EtatAnalyseEcart =
  * RESET SUR CHANGEMENT DE SESSION : ce composant reste monté tant que le
  * panneau « Détail de la session » reste ouvert, mais l'utilisateur peut
  * sélectionner une AUTRE session sans le fermer (`selectionnerSession`) — sans
- * le `useEffect` ci-dessous, un commentaire reçu pour la session précédente
+ * la `key={sessionId}` ci-dessous, un commentaire reçu pour la session précédente
  * resterait affiché sous le nom de la nouvelle, ce qui est exactement le genre
  * de confusion que CLAUDE.md §7 interdit (une valeur doit toujours être
  * rattachée à ce qu'elle décrit réellement).
+ *
+ * FOCUS (défaut connu corrigé le 28/09/2026) : le bouton était démonté dès le
+ * clic et le focus retombait sur `<body>`. Le comportement vit désormais dans
+ * `DemandeClaude` (`composants/DemandeClaude.tsx`), partagé avec les deux
+ * demandes de `ProchaineSession.tsx`, qui portaient le même défaut.
  */
 export function AnalyseEcartClaude({
   sessionId,
@@ -1469,70 +1467,25 @@ export function AnalyseEcartClaude({
   readonly sessionId: string;
   readonly raisonIndisponible: string | undefined;
 }) {
-  const [etat, setEtat] = useState<EtatAnalyseEcart>({ statut: 'inactif' });
-
-  useEffect(() => {
-    setEtat({ statut: 'inactif' });
-  }, [sessionId]);
-
-  const demander = async (): Promise<void> => {
-    if (raisonIndisponible !== undefined) return;
-    setEtat({ statut: 'en_cours' });
-    try {
-      const brut = await requeteApi<unknown>(`/ia/analyse-ecart/${sessionId}`, {
-        method: 'POST',
-        body: JSON.stringify({}),
-      });
-      setEtat({ statut: 'recu', commentaire: schemaCommentaireIa.parse(brut) });
-    } catch (erreur) {
-      setEtat({
-        statut: 'erreur',
-        message:
-          erreur instanceof ErreurApi ? erreur.message : 'L’analyse n’a pas pu être demandée.',
-      });
-    }
-  };
-
-  const inerte = etat.statut === 'en_cours' || raisonIndisponible !== undefined;
-
   return (
     <div className="border-t border-line px-4 py-3">
       <h3 className="mb-groupe text-2xs uppercase text-ink-3">Analyse d’écart (Claude)</h3>
-
-      {etat.statut === 'inactif' && (
-        <div className="flex items-center justify-between gap-bloc">
-          <p className="text-sm text-ink-3">
-            {raisonIndisponible ??
-              'Claude peut proposer des hypothèses sur l’écart entre le prévu et le réalisé. Il ne recalcule rien.'}
-          </p>
-          <button
-            type="button"
-            onClick={() => void demander()}
-            aria-disabled={inerte}
-            {...(raisonIndisponible !== undefined ? { title: raisonIndisponible } : {})}
-            className={`h-controle shrink-0 rounded-sm border border-line-field px-3 text-sm text-ink-2 hover:bg-surface-sunken ${
-              inerte ? 'cursor-not-allowed opacity-60' : ''
-            }`}
-          >
-            Demander une analyse
-          </button>
-        </div>
-      )}
-
-      {etat.statut === 'en_cours' && <p className="text-sm text-ink-3">Claude réfléchit…</p>}
-
-      {etat.statut === 'recu' && etat.commentaire.disponible && (
-        <div className="flex flex-col gap-groupe">
-          <div className="whitespace-pre-wrap text-sm text-ink-2">{etat.commentaire.texte}</div>
-          <p className="text-xs text-ink-3">{formaterCoutAppelIa(etat.commentaire.coutCents)}</p>
-        </div>
-      )}
-
-      {etat.statut === 'recu' && !etat.commentaire.disponible && (
-        <p className="text-sm text-ink-3">{etat.commentaire.raison}</p>
-      )}
-
-      {etat.statut === 'erreur' && <p className="text-sm text-depassement">{etat.message}</p>}
+      {/* `key` : changer de session repart d'un état vierge, comme l'ancien
+          `useEffect` de remise à zéro. */}
+      <DemandeClaude
+        key={sessionId}
+        presentation="Claude peut proposer des hypothèses sur l’écart entre le prévu et le réalisé. Il ne recalcule rien."
+        libelleBouton="Demander une analyse"
+        appeler={() =>
+          requeteApi<unknown>(`/ia/analyse-ecart/${sessionId}`, {
+            method: 'POST',
+            body: JSON.stringify({}),
+          })
+        }
+        messageEchec="L’analyse n’a pas pu être demandée."
+        formaterCout={formaterCoutAppelIa}
+        raisonIndisponible={raisonIndisponible}
+      />
     </div>
   );
 }
