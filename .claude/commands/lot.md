@@ -167,8 +167,8 @@ pourcentage de couverture n'a de sens qu'avec son **périmètre** — mesure-le
 
 Dispatche un relecteur avec un **contexte précisément construit** — jamais l'historique de ta
 session. Donne-lui : la doctrine à connaître, les fichiers exacts, et la consigne de chercher **les
-fixtures aveugles en priorité**. Ce dépôt n'ayant pas de dépôt git, raisonne par **chemins de
-fichiers** et non par SHA.
+fixtures aveugles en priorité**. Donne-lui des **chemins de fichiers** exacts, et la plage de
+commits quand le travail est sur une branche git.
 
 À la réception → `Skill(superpowers:receiving-code-review)`
 
@@ -202,8 +202,6 @@ l'ai pas mesuré », pas une estimation présentée comme un fait.
 
 ## Note sur `/pre-push`
 
-La commande `.claude/commands/pre-push.md` de ce dossier vise **un site Next.js** (`messages/**`,
-`next.config.ts`, `src/app/api/**`, hreflang, `llms.txt`) : rien de tout cela n'existe dans Batte, et
-le dépôt n'a de toute façon **pas de dépôt git** (mémoire `husky-pre-push-inadapte`). Elle est donc
-inopérante ici. **Utilise ce workflow-ci**, et laisse `/pre-push` à l'autre projet tant que le
-porteur n'a pas tranché son sort.
+L'ancienne commande `.claude/commands/pre-push.md` visait **un site Next.js** (`messages/**`,
+`next.config.ts`, hreflang, `llms.txt`) : rien de tout cela n'existe dans Batte. Le porteur a tranché
+le 28/09/2026 : elle est retirée du dépôt. **Utilise ce workflow-ci**, et `/audit` pour une revue.

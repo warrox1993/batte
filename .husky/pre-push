@@ -4,7 +4,7 @@
 # Bloque le push si une etape echoue.
 #
 # Ce hook ne peut PAS lancer les agents Claude (c'est un script shell) : la
-# revue par agents se fait via la commande /pre-push dans Claude Code.
+# revue par agents se fait via la commande /audit dans Claude Code.
 # Pour pusher malgre tout, en urgence : `git push --no-verify`.
 # ============================================================================
 set -e
@@ -42,4 +42,4 @@ echo "▶ 5/5  Build du front (vite)…"
 npm run build
 
 echo "✅ Gate deterministe OK — push autorise."
-echo "   (Revue par les agents : lance /pre-push dans Claude Code avant de pusher.)"
+echo "   (Revue par les agents : lance /audit dans Claude Code avant de pusher.)"

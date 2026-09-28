@@ -19,9 +19,11 @@ style. Ils ne voient **ni un calcul faux qui passe ses propres tests, ni une val
 
 ## Étape 0 — Le périmètre, et pourquoi il est fragile ici
 
-**Ce dépôt n'a PAS de dépôt git.** `git diff` ne fonctionne pas, et le hook `.husky/pre-push` est
-inopérant pour la même raison (mémoire `husky-pre-push-inadapte`). Le périmètre doit donc être
-établi autrement, **par ordre de fiabilité décroissante** :
+**Mise à jour du 28/09/2026 : le projet est désormais versionné sous git.** Sur une branche,
+`git diff --name-only main...HEAD` donne le périmètre exact et passe avant les options ci-dessous.
+Ces options restent valables hors branche ; elles datent de la période où le dossier n'était pas
+un dépôt git (le hook `.husky/pre-push` était alors inopérant, mémoire `husky-pre-push-inadapte`).
+Par ordre de fiabilité décroissante :
 
 1. **`$ARGUMENTS` liste des fichiers ou dossiers** → c'est le périmètre, tel quel. La meilleure
    option : elle vient de quelqu'un qui sait ce qu'il a changé.
@@ -65,6 +67,9 @@ du bruit, et le bruit fait rater les vrais signaux.
 **Les quatre agents `batte-*` sont les seuls qui connaissent la doctrine de ce dépôt.** Les agents
 génériques (`security-auditor`, `accessibility-tester`, `performance-engineer`) apportent un regard
 extérieur utile — mais **donne-leur le contexte métier dans leur prompt**, ils ne l'ont pas.
+Ils ne sont plus versionnés ici depuis le 28/09/2026 : ce sont des fiches tierces, à installer au
+niveau utilisateur (`~/.claude/agents/`) ou par un greffon. S'ils manquent, le pilier concerné est
+confié à un agent généraliste avec la même consigne.
 
 ---
 
