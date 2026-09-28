@@ -166,6 +166,13 @@ async function monterPret(monde: Monde = {}, surcharges: Partial<Props> = {}): P
   const props = proprietes(surcharges);
   render(<SaisieReception {...props} />);
   await screen.findByRole('combobox', { name: /^Fournisseur/ });
+  // Test instable corrigé le 28/09/2026 (échec vu une fois en CI, sous
+  // charge) : dès que le référentiel est prêt, un `useEffect` place le focus
+  // sur « Fournisseur ». Le champ apparaît dans le DOM AVANT que cet effet ne
+  // s'exécute ; un test qui focalisait aussitôt un autre champ pouvait donc se
+  // le faire reprendre, et sa touche Entrée partait dans « Fournisseur ». On
+  // attend l'état stable promis par le composant avant de rendre la main.
+  await waitFor(() => expect(champFournisseur()).toHaveFocus());
   return props;
 }
 
