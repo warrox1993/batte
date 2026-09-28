@@ -1,5 +1,6 @@
-# Intégration continue : les mêmes vérifications que le hook `.husky/pre-push`,
-# rejouées sur une machine vierge à chaque push sur main et à chaque pull request.
+# Intégration continue : les vérifications du script `.husky/pre-push` (hors mesure
+# de couverture), rejouées sur une machine vierge à chaque push sur main et à chaque
+# pull request.
 #
 # Les actions sont épinglées par SHA de commit (et non par étiquette mobile),
 # vérifié avec `gh api` le 28/09/2026 :
@@ -53,8 +54,12 @@ jobs:
       - name: Installer Chromium pour Playwright
         run: npx playwright install --with-deps chromium
 
-      - name: Tests (Vitest)
-        run: npx vitest run
-
+      # Construite AVANT les tests : `apps/api/src/serveur-modes.test.ts` vérifie
+      # que le serveur de production sert réellement `apps/web/dist` (200 sur /).
+      # Sans construction préalable, ce test échoue sur une machine vierge
+      # (constaté au premier passage de cette CI, 28/09/2026).
       - name: Construire l'interface
         run: npm run build
+
+      - name: Tests (Vitest)
+        run: npx vitest run
