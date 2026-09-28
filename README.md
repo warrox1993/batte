@@ -150,11 +150,13 @@ dépannage) est dans [`docs/UTILISATION.md`](docs/UTILISATION.md).
 
 Mesure du 28/09/2026 :
 
-- 4 845 tests dans 265 fichiers, tous verts, en une minute environ sur mon poste :
-  fonctions pures du cœur, services SQLite, routes Fastify, écrans React montés dans jsdom avec
-  Testing Library, rendu PDF réel par Chromium.
-- Couverture (v8) : 91 % des lignes sur l'ensemble du code, 99,9 % des lignes et 98 % des branches
-  sur `packages/core`.
+- 4 845 tests dans 265 fichiers, en une minute environ sur mon poste : fonctions pures du cœur,
+  services SQLite, routes Fastify, écrans React montés dans jsdom avec Testing Library, rendu PDF
+  réel par Chromium. 4 832 passent ; les 13 autres sont des `it.fails` qui décrivent des défauts
+  connus et passeraient au rouge le jour où ces défauts seraient corrigés.
+- Couverture (v8, Vitest 4) : 85,6 % des lignes sur l'ensemble du code, 99,8 % des lignes et
+  97,5 % des branches sur `packages/core`.
+- `npm audit` : 0 vulnérabilité connue, dépendances de développement comprises.
 - L'intégration continue GitHub Actions rejoue à chaque pull request : vérification des types,
   ESLint, Prettier, installation de Chromium, construction de l'interface, puis Vitest (un test
   vérifie que le serveur de production sert bien l'interface construite).
