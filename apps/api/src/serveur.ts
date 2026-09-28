@@ -15,9 +15,11 @@
 import { resolve } from 'node:path';
 import Fastify, { type FastifyInstance } from 'fastify';
 import fastifyStatic from '@fastify/static';
+import rateLimit from '@fastify/rate-limit';
 import { config, estModulePrincipal, fermerBase, type BaseBatte } from '@batte/db';
 import { creerContexte } from './contexte.js';
 import { enregistrerGestionnaireErreurs, envoyerReponse404 } from './plugins/erreurs.js';
+import { OPTIONS_LIMITATION_DEBIT } from './plugins/limitation-debit.js';
 import { routesAfsca } from './routes/afsca.js';
 import { routesAudit } from './routes/audit.js';
 import { routesCommandes } from './routes/commandes.js';
@@ -145,6 +147,10 @@ export function construireServeur(base: BaseBatte, options: OptionsServeur = {})
      */
     reponse.redirect(`http://localhost:${PORT_VITE_DEV}${requete.url}`, 302);
   });
+
+  // AVANT les routes : le greffon lit le `config.rateLimit` de chaque route au
+  // moment ou elle est declaree (plugins/limitation-debit.ts, D-099).
+  app.register(rateLimit, OPTIONS_LIMITATION_DEBIT);
 
   app.register(
     async (api) => {
