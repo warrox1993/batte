@@ -1581,7 +1581,7 @@ describe('Registre AFSCA — non-conformités : déclarer et clôturer, ANNONCÉ
   );
 
   /**
-   * ═══ DÉFAUT RÉEL, NON CORRIGÉ (hors zone d'écriture de cette mission) ═══
+   * ═══ DÉFAUT RÉEL, CORRIGÉ LE 28/09/2026 (était en `it.fails`) ═══
    *
    * Trouvé PAR ce test — vert au premier jet avec `mockResolvedValue`,
    * rouge dès qu'une promesse CONTRÔLÉE force à observer le rendu qui suit
@@ -1610,23 +1610,19 @@ describe('Registre AFSCA — non-conformités : déclarer et clôturer, ANNONCÉ
    * (chaîne du froid, hygiène) ne reçoit AUCUN accusé de réception — le seul
    * signal est la disparition du formulaire.
    *
-   * Ce test rougira dès que le message sera sorti de la branche qui le
-   * démonte (même remède que les deux précédents : un `<p role="status">`
-   * indépendant de `nonConformiteSelectionnee.dateResolution`), et
-   * réclamera alors sa promotion en test ordinaire (docs/39 §8).
+   * CORRIGÉ le 28/09/2026 : le `<p role="status">` est sorti du ternaire, il
+   * ne dépend plus de `dateResolution` (même remède que les deux
+   * précédents). Le test, en `it.fails` jusque-là, est devenu ordinaire.
    */
-  it.fails(
-    'DÉFAUT CONNU — la confirmation « Non-conformité clôturée. » n’est jamais visible',
-    async () => {
-      const { repondre } = await clotureEnCours();
-      repondre({
-        ...NC_OUVERTE,
-        dateResolution: '2026-08-02',
-        actionCorrective: 'Blocs remplacés.',
-      });
-      await screen.findByText('Non-conformité clôturée.');
-    },
-  );
+  it('la confirmation « Non-conformité clôturée. » est visible après la clôture (défaut corrigé le 28/09/2026)', async () => {
+    const { repondre } = await clotureEnCours();
+    repondre({
+      ...NC_OUVERTE,
+      dateResolution: '2026-08-02',
+      actionCorrective: 'Blocs remplacés.',
+    });
+    await screen.findByText('Non-conformité clôturée.');
+  });
 });
 
 describe('Registre AFSCA — exercice de traçabilité : l’envoi est ANNONCÉ (promesse contrôlée)', () => {

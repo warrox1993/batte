@@ -1874,11 +1874,6 @@ function OngletNonConformites() {
                         {etatCloture.statut === 'en_cours' ? 'Clôture…' : 'Clôturer'}
                       </button>
                     </div>
-                    {etatCloture.statut === 'succes' && (
-                      <p role="status" className="text-sm text-conforme">
-                        {etatCloture.message}
-                      </p>
-                    )}
                     {etatCloture.statut === 'erreur' && (
                       <BandeErreur message={etatCloture.message} />
                     )}
@@ -1889,6 +1884,15 @@ function OngletNonConformites() {
                     {nonConformiteSelectionnee.actionCorrective !== null && (
                       <>Action corrective : {nonConformiteSelectionnee.actionCorrective}</>
                     )}
+                  </p>
+                )}
+                {/* Hors du ternaire (défaut connu corrigé le 28/09/2026) : la
+                    clôture réussie donne à la non-conformité sa date de
+                    résolution, ce qui démonte le formulaire au même rendu. Un
+                    message posé DANS le formulaire n'était donc jamais visible. */}
+                {etatCloture.statut === 'succes' && (
+                  <p role="status" className="px-4 pb-3 text-sm text-conforme">
+                    {etatCloture.message}
                   </p>
                 )}
               </Panneau>
