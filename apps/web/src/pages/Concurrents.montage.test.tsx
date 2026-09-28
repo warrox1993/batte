@@ -602,7 +602,7 @@ describe('Concurrents — attente d’écriture : la FICHE l’annonce, puis red
       /*
         2. Un second clic ou une Entrée sur CE bouton ne prouveraient rien :
         `disabled` natif, bloqué par le navigateur lui-même. Le chemin qui
-        contourne RÉELLEMENT ce bouton est Ctrl+S — voir le `it.fails`
+        contourne RÉELLEMENT ce bouton est Ctrl+S — voir le test (ex-`it.fails`)
         ci-dessous, qui montre qu'aucun garde-fou interne ne le bloque, lui.
       */
 
@@ -698,10 +698,10 @@ describe('Concurrents — attente d’écriture : PRODUIT et OBSERVATION l’ann
 });
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   5. Défaut RÉEL trouvé en lisant la production — NON corrigé ici (hors mandat)
+   5. Défaut RÉEL trouvé en lisant la production — corrigé le 28/09/2026
    ═══════════════════════════════════════════════════════════════════════════ */
 
-describe('Concurrents — défaut RÉEL : Ctrl+S contourne le `disabled` de la fiche, SANS garde-fou interne', () => {
+describe('Concurrents — défaut RÉEL : Ctrl+S contourne le `disabled` de la fiche, garde-fou interne ajouté le 28/09/2026', () => {
   /**
    * `it.fails` (docs/39 §8), même famille que le défaut jumeau démontré dans
    * `Ingredients.montage.test.tsx`. `enregistrerFiche()` (`Concurrents.tsx`)
@@ -712,49 +712,47 @@ describe('Concurrents — défaut RÉEL : Ctrl+S contourne le `disabled` de la f
    * DIRECTEMENT depuis le conteneur englobant (`onKeyDown` en tête de
    * l'écran), sans passer par ce bouton : un second Ctrl+S pendant
    * l'aller-retour envoie donc une SECONDE écriture PATCH sur le même
-   * concurrent. Trouvé en lisant la production le 02/08/2026 ; pas corrigé
-   * ici, hors zone d'écriture de cette mission.
+   * concurrent. Trouvé en lisant la production le 02/08/2026 ; CORRIGÉ le
+   * 28/09/2026 par une garde en tête de `enregistrerFiche()`. Le test, en
+   * `it.fails` jusque-là, est devenu un test ordinaire.
    */
-  it.fails(
-    'un second Ctrl+S PENDANT l’enregistrement de la fiche ne devrait PAS déclencher une seconde écriture',
-    async () => {
-      feindre({
-        liste: listeConcurrents([concurrent()]),
-        comparateur: comparateurComplet(),
-        lieux: LIEUX,
-        detail: detailDe(concurrent()),
-      });
-      render(<Concurrents />);
-      await screen.findByText('Crêperie du Pont');
-      await userEvent.click(screen.getByText('Crêperie du Pont'));
+  it('un second Ctrl+S PENDANT l’enregistrement de la fiche ne devrait PAS déclencher une seconde écriture', async () => {
+    feindre({
+      liste: listeConcurrents([concurrent()]),
+      comparateur: comparateurComplet(),
+      lieux: LIEUX,
+      detail: detailDe(concurrent()),
+    });
+    render(<Concurrents />);
+    await screen.findByText('Crêperie du Pont');
+    await userEvent.click(screen.getByText('Crêperie du Pont'));
 
-      const resolveurs: Array<(valeur: unknown) => void> = [];
-      appel.mockImplementation((chemin: string, options?: RequestInit) => {
-        if (chemin === '/concurrents/conc-1' && options?.method === 'PATCH') {
-          return new Promise((resoudre) => resolveurs.push(resoudre));
-        }
-        return new Promise<never>(() => {});
-      });
-
-      const qualite = document.querySelector('[name="qualitePercue"]') as HTMLElement;
-      qualite.focus();
-      await userEvent.keyboard('{Control>}s{/Control}');
-      // PENDANT l'aller-retour : le bouton est déjà inerte…
-      expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeDisabled();
-
-      try {
-        // …mais Ctrl+S, LUI, ne passe pas par ce bouton.
-        await userEvent.keyboard('{Control>}s{/Control}');
-
-        expect(
-          appel.mock.calls.filter(
-            ([c, o]) =>
-              c === '/concurrents/conc-1' && (o as RequestInit | undefined)?.method === 'PATCH',
-          ),
-        ).toHaveLength(1);
-      } finally {
-        resolveurs.forEach((resoudre) => resoudre(concurrent()));
+    const resolveurs: Array<(valeur: unknown) => void> = [];
+    appel.mockImplementation((chemin: string, options?: RequestInit) => {
+      if (chemin === '/concurrents/conc-1' && options?.method === 'PATCH') {
+        return new Promise((resoudre) => resolveurs.push(resoudre));
       }
-    },
-  );
+      return new Promise<never>(() => {});
+    });
+
+    const qualite = document.querySelector('[name="qualitePercue"]') as HTMLElement;
+    qualite.focus();
+    await userEvent.keyboard('{Control>}s{/Control}');
+    // PENDANT l'aller-retour : le bouton est déjà inerte…
+    expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeDisabled();
+
+    try {
+      // …mais Ctrl+S, LUI, ne passe pas par ce bouton.
+      await userEvent.keyboard('{Control>}s{/Control}');
+
+      expect(
+        appel.mock.calls.filter(
+          ([c, o]) =>
+            c === '/concurrents/conc-1' && (o as RequestInit | undefined)?.method === 'PATCH',
+        ),
+      ).toHaveLength(1);
+    } finally {
+      resolveurs.forEach((resoudre) => resoudre(concurrent()));
+    }
+  });
 });

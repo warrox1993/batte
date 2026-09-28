@@ -631,7 +631,7 @@ describe('Équipements — l’état d’enregistrement, observé PENDANT que la
   });
 
   /**
-   * ═══ DÉFAUT RÉEL, NON CORRIGÉ (hors zone d'écriture de cette mission) ═══
+   * ═══ DÉFAUT RÉEL, CORRIGÉ LE 28/09/2026 (était en `it.fails`) ═══
    *
    * Même défaut que sur `Produits.tsx`, `Menus.tsx`, `LieuxMarche.tsx` et
    * `NomenclatureVente.tsx` : `enregistrer()` (`Equipements.tsx`) ne consulte
@@ -642,52 +642,49 @@ describe('Équipements — l’état d’enregistrement, observé PENDANT que la
    * Ctrl+S pendant l'envoi CONTOURNE donc le bouton désactivé et repart en
    * DEUXIÈME requête PATCH pour un seul geste d'enregistrement.
    *
-   * Ce test échoue intentionnellement : il décrit le comportement SAIN (une
-   * seule requête), que le code actuel ne tient pas.
+   * Ce test décrit le comportement SAIN (une seule requête). Il était en
+   * `it.fails` jusqu'au correctif : une garde en tête de `enregistrer()`
+   * refuse un second départ tant que le premier est en vol.
    */
-  it.fails(
-    'DÉFAUT RÉEL : un second Ctrl+S pendant l’envoi contourne le bouton `disabled` et repart en réseau',
-    async () => {
-      const base = toutServi([equipement({ id: 'eq-1' })]);
-      const resolveurs: Array<(valeur: unknown) => void> = [];
-      appel.mockImplementation((chemin: string, options?: RequestInit) => {
-        const methode = options?.method ?? 'GET';
-        if (methode === 'GET') {
-          if (chemin === '/equipements') return Promise.resolve(base.equipements);
-          if (chemin === '/equipements/diagnostic-puissance')
-            return Promise.resolve(base.diagnostic);
-          if (chemin === '/equipements/point-equilibre-autoproduction')
-            return Promise.resolve(base.pointEquilibre);
-          if (chemin === '/equipements/empreinte-quantites-physiques')
-            return Promise.resolve(base.empreinte);
-        }
-        if (methode === 'PATCH' && chemin === '/equipements/eq-1') {
-          return new Promise((resoudre) => resolveurs.push(resoudre));
-        }
-        return Promise.reject(new Error(`Appel non attendu dans ce test : ${methode} ${chemin}`));
-      });
-      render(<Equipements />);
+  it('un second Ctrl+S pendant l’envoi ne contourne plus le bouton `disabled` : une seule requête (défaut corrigé le 28/09/2026)', async () => {
+    const base = toutServi([equipement({ id: 'eq-1' })]);
+    const resolveurs: Array<(valeur: unknown) => void> = [];
+    appel.mockImplementation((chemin: string, options?: RequestInit) => {
+      const methode = options?.method ?? 'GET';
+      if (methode === 'GET') {
+        if (chemin === '/equipements') return Promise.resolve(base.equipements);
+        if (chemin === '/equipements/diagnostic-puissance') return Promise.resolve(base.diagnostic);
+        if (chemin === '/equipements/point-equilibre-autoproduction')
+          return Promise.resolve(base.pointEquilibre);
+        if (chemin === '/equipements/empreinte-quantites-physiques')
+          return Promise.resolve(base.empreinte);
+      }
+      if (methode === 'PATCH' && chemin === '/equipements/eq-1') {
+        return new Promise((resoudre) => resolveurs.push(resoudre));
+      }
+      return Promise.reject(new Error(`Appel non attendu dans ce test : ${methode} ${chemin}`));
+    });
+    render(<Equipements />);
 
-      await screen.findByText('Radiateur soufflant');
-      await userEvent.click(screen.getByText('Radiateur soufflant'));
+    await screen.findByText('Radiateur soufflant');
+    await userEvent.click(screen.getByText('Radiateur soufflant'));
 
-      // Un champ SANS conséquence sur la validité du corps envoyé : la seule
-      // chose qui compte ici est que le focus reste DANS le formulaire.
-      const notes = document.querySelector('[name="notes"]') as HTMLInputElement;
-      notes.focus();
+    // Un champ SANS conséquence sur la validité du corps envoyé : la seule
+    // chose qui compte ici est que le focus reste DANS le formulaire.
+    const notes = document.querySelector('[name="notes"]') as HTMLInputElement;
+    notes.focus();
 
-      await userEvent.keyboard('{Control>}s{/Control}');
-      expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeDisabled();
+    await userEvent.keyboard('{Control>}s{/Control}');
+    expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeDisabled();
 
-      // Le bouton est déjà `disabled` — et pourtant rien n'empêche ce second
-      // Ctrl+S d'appeler `enregistrer()` une deuxième fois.
-      await userEvent.keyboard('{Control>}s{/Control}');
+    // Le bouton est déjà `disabled` — et pourtant rien n'empêche ce second
+    // Ctrl+S d'appeler `enregistrer()` une deuxième fois.
+    await userEvent.keyboard('{Control>}s{/Control}');
 
-      // Toujours résoudre AVANT l'assertion qui échoue, sinon les promesses
-      // fuient dans le test suivant.
-      resolveurs.forEach((r) => r(equipement({ id: 'eq-1' })));
+    // Toujours résoudre AVANT l'assertion qui échoue, sinon les promesses
+    // fuient dans le test suivant.
+    resolveurs.forEach((r) => r(equipement({ id: 'eq-1' })));
 
-      expect(resolveurs.length).toBe(1);
-    },
-  );
+    expect(resolveurs.length).toBe(1);
+  });
 });

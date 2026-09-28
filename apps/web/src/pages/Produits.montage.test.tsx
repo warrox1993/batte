@@ -700,7 +700,7 @@ describe('Produits — l’état d’enregistrement, observé PENDANT que la req
   });
 
   /**
-   * ═══ DÉFAUT RÉEL, NON CORRIGÉ (hors zone d'écriture de cette mission) ═══
+   * ═══ DÉFAUT RÉEL, CORRIGÉ LE 28/09/2026 (était en `it.fails`) ═══
    *
    * `enregistrer()` (`Produits.tsx`) ne vérifie JAMAIS `enregistrement.phase`
    * avant de repartir en réseau. Le bouton « Enregistrer » porte bien
@@ -713,48 +713,46 @@ describe('Produits — l’état d’enregistrement, observé PENDANT que la req
    * seule intention, sur un écran qui décide la ventilation transformé/revendu
    * des seuils légaux (CLAUDE.md §6).
    *
-   * Ce test échoue intentionnellement : il décrit le comportement SAIN (une
-   * seule requête), que le code actuel ne tient pas.
+   * Ce test décrit le comportement SAIN (une seule requête). Il était en
+   * `it.fails` jusqu'au correctif : une garde en tête de `enregistrer()`
+   * refuse un second départ tant que le premier est en vol.
    */
-  it.fails(
-    'DÉFAUT RÉEL : un second Ctrl+S pendant l’envoi contourne le bouton `disabled` et repart en réseau',
-    async () => {
-      const resolveurs: Array<(valeur: unknown) => void> = [];
-      const patch = vi.fn(() => new Promise((resoudre) => resolveurs.push(resoudre)));
-      brancherApi({ ...reponsesNominales(), 'PATCH /produits/p-crepe': patch });
-      monter();
-      await ouvrirLaFiche(/Crêpe froment/);
+  it('un second Ctrl+S pendant l’envoi ne contourne plus le bouton `disabled` : une seule requête (défaut corrigé le 28/09/2026)', async () => {
+    const resolveurs: Array<(valeur: unknown) => void> = [];
+    const patch = vi.fn(() => new Promise((resoudre) => resolveurs.push(resoudre)));
+    brancherApi({ ...reponsesNominales(), 'PATCH /produits/p-crepe': patch });
+    monter();
+    await ouvrirLaFiche(/Crêpe froment/);
 
-      // Un champ SANS conséquence sur la validité du corps envoyé : la seule
-      // chose qui compte ici est que le focus reste DANS le formulaire.
-      const champCategorie = screen.getByRole('textbox', { name: 'Catégorie' });
-      champCategorie.focus();
+    // Un champ SANS conséquence sur la validité du corps envoyé : la seule
+    // chose qui compte ici est que le focus reste DANS le formulaire.
+    const champCategorie = screen.getByRole('textbox', { name: 'Catégorie' });
+    champCategorie.focus();
 
-      await userEvent.keyboard('{Control>}s{/Control}');
-      expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeDisabled();
+    await userEvent.keyboard('{Control>}s{/Control}');
+    expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeDisabled();
 
-      // Le bouton est déjà `disabled` — et pourtant rien n'empêche ce second
-      // Ctrl+S d'appeler `enregistrer()` une deuxième fois.
-      await userEvent.keyboard('{Control>}s{/Control}');
+    // Le bouton est déjà `disabled` — et pourtant rien n'empêche ce second
+    // Ctrl+S d'appeler `enregistrer()` une deuxième fois.
+    await userEvent.keyboard('{Control>}s{/Control}');
 
-      // Toujours résoudre AVANT l'assertion qui échoue, sinon les promesses
-      // du mock fuient dans le test suivant (elles ne seraient jamais
-      // consommées si l'assertion ci-dessous interrompt le test en premier).
-      resolveurs.forEach((r) =>
-        r(
-          produit({
-            id: 'p-crepe',
-            nom: 'Crêpe froment / Sirop de Liège',
-            nature: 'transforme',
-            recetteId: 'r-1',
-            consommationUnite: 'crepes',
-            nbCrepes: 1,
-            prixCents: 350,
-          }),
-        ),
-      );
+    // Toujours résoudre AVANT l'assertion qui échoue, sinon les promesses
+    // du mock fuient dans le test suivant (elles ne seraient jamais
+    // consommées si l'assertion ci-dessous interrompt le test en premier).
+    resolveurs.forEach((r) =>
+      r(
+        produit({
+          id: 'p-crepe',
+          nom: 'Crêpe froment / Sirop de Liège',
+          nature: 'transforme',
+          recetteId: 'r-1',
+          consommationUnite: 'crepes',
+          nbCrepes: 1,
+          prixCents: 350,
+        }),
+      ),
+    );
 
-      expect(patch).toHaveBeenCalledTimes(1);
-    },
-  );
+    expect(patch).toHaveBeenCalledTimes(1);
+  });
 });

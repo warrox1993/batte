@@ -453,6 +453,11 @@ export default function Equipements() {
   }
 
   function enregistrer(): void {
+    // Garde contre la double écriture (défaut connu corrigé le 28/09/2026) :
+    // le bouton « Enregistrer » est `disabled` pendant l'envoi, mais Ctrl+S
+    // appelle cette fonction directement depuis le conteneur, sans passer
+    // par lui. Sans ce retour, un second Ctrl+S repartait en réseau.
+    if (enregistrement.phase === 'enregistrement') return;
     const corps = {
       nom: brouillon.nom,
       type: brouillon.type === '' ? null : brouillon.type,

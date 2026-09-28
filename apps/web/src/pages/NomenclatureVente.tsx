@@ -357,6 +357,11 @@ export default function NomenclatureVente() {
   }
 
   function enregistrer(): void {
+    // Garde contre la double écriture (défaut connu corrigé le 28/09/2026) :
+    // le bouton « Enregistrer » est `disabled` pendant l'envoi, mais Ctrl+S
+    // appelle cette fonction directement depuis le conteneur, sans passer
+    // par lui. Sans ce retour, un second Ctrl+S repartait en réseau.
+    if (enregistrement === 'enregistrement') return;
     if (produitId === '') return;
     const corps = corpsDepuisBrouillon();
     if (corps === null) return;

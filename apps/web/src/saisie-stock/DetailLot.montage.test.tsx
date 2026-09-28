@@ -747,7 +747,9 @@ describe('DetailLot — transitions d’état pendant l’envoi (promesse en vol
       await utilisateur.selectOptions(champMotif(/^Motif/), 'QUARANTAINE_DOUTE');
       await utilisateur.click(screen.getByRole('button', { name: 'Appliquer le statut' }));
 
-      expect(screen.getByRole('button', { name: 'Appliquer le statut' })).toBeDisabled();
+      // Pendant l'envoi, le même bouton annonce l'attente (correctif du
+      // 28/09/2026, voir le test « annonce l’attente par un libellé » plus bas).
+      expect(screen.getByRole('button', { name: 'Enregistrement…' })).toBeDisabled();
 
       repondre?.({
         lotId: 'lot-farine-a',
@@ -762,6 +764,7 @@ describe('DetailLot — transitions d’état pendant l’envoi (promesse en vol
         expect(screen.getByRole('button', { name: 'Changer le statut…' })).toBeInTheDocument(),
       );
       expect(screen.queryByRole('button', { name: 'Appliquer le statut' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Enregistrement…' })).not.toBeInTheDocument();
     },
   );
 
@@ -842,7 +845,7 @@ describe('DetailLot — transitions d’état pendant l’envoi (promesse en vol
   );
 
   /**
-   * ═══ DÉFAUT RÉEL, TROUVÉ EN LISANT `DetailLot.tsx` ═══
+   * ═══ DÉFAUT RÉEL, TROUVÉ EN LISANT `DetailLot.tsx`, CORRIGÉ LE 28/09/2026 ═══
    *
    * Le bouton « Appliquer le statut » ne porte AUCUN libellé d'attente : son
    * texte reste figé sur `{destructionConfirmee ? 'Confirmer la destruction'
@@ -854,13 +857,14 @@ describe('DetailLot — transitions d’état pendant l’envoi (promesse en vol
    * saisie est partie, hormis un bouton qui a cessé de réagir — ce que
    * docs/06/07 demandent précisément d'annoncer par un libellé.
    *
-   * Signalé par un test qui échoue volontairement (`it.fails`, docs/39 §8) :
-   * si un jour ce libellé est ajouté, ce test passera au vert tout seul et
-   * signalera qu'il doit redevenir un test ordinaire.
+   * Signalé d’abord par un test qui échouait volontairement (`it.fails`,
+   * docs/39 §8).
+   * CORRIGÉ le 28/09/2026 : le bouton affiche « Enregistrement… » pendant
+   * l'envoi. Le test, en `it.fails` jusque-là, est devenu ordinaire.
    */
-  it.fails(
-    'le bouton « Appliquer le statut » DEVRAIT annoncer l’attente par un libellé, comme ses deux ' +
-      'voisins de ce même fichier — il ne le fait pas',
+  it(
+    'le bouton « Appliquer le statut » annonce l’attente par un libellé, comme ses deux ' +
+      'voisins de ce même fichier (défaut corrigé le 28/09/2026)',
     async () => {
       const utilisateur = userEvent.setup();
       await monterPret();

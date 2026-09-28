@@ -7,11 +7,9 @@ import {
   formaterMontant,
   formaterPourcent,
   ouTiret,
-  schemaCommentaireIa,
   schemaComparateur,
   schemaPrevision,
   TIRET_ABSENT,
-  type CommentaireIa,
   type Comparateur,
   type Prevision,
 } from '@batte/core';
@@ -20,6 +18,7 @@ import { MessageErreur } from '../composants/EncartErreur';
 import { Panneau } from '../composants/Panneau';
 import { Tableau, type ColonneTableau } from '../composants/Tableau';
 import { EtatVide } from '../composants/EtatVide';
+import { DemandeClaude } from '../composants/DemandeClaude';
 import { ErreurApi, requeteApi } from '../lib/api';
 
 /**
@@ -784,12 +783,6 @@ export default function ProchaineSession() {
   );
 }
 
-type EtatCommentaire =
-  | { statut: 'inactif' }
-  | { statut: 'en_cours' }
-  | { statut: 'recu'; commentaire: CommentaireIa }
-  | { statut: 'erreur'; message: string };
-
 /**
  * Phrase affichée à côté d'un commentaire Claude reçu (mission « garde-fou de
  * dépense », audit du 30/07/2026) : CLAUDE.md §5 exige « un compteur de coût
@@ -816,66 +809,20 @@ export function formaterCoutAppelIa(coutCents: number): string {
  * un état normal affiché tel quel, jamais une erreur.
  */
 function CommentaireClaude() {
-  const [etat, setEtat] = useState<EtatCommentaire>({ statut: 'inactif' });
-
-  const demander = async (): Promise<void> => {
-    setEtat({ statut: 'en_cours' });
-    try {
-      const brut = await requeteApi<unknown>('/prevision/commenter', {
-        method: 'POST',
-        body: JSON.stringify({}),
-      });
-      setEtat({ statut: 'recu', commentaire: schemaCommentaireIa.parse(brut) });
-    } catch (erreur) {
-      setEtat({
-        statut: 'erreur',
-        message:
-          erreur instanceof ErreurApi ? erreur.message : 'Le commentaire n’a pas pu être demandé.',
-      });
-    }
-  };
-
   return (
     <Panneau titre="Avis de Claude">
-      {etat.statut === 'inactif' && (
-        <div className="flex items-center justify-between gap-bloc">
-          <p className="text-sm text-ink-3">
-            Claude peut commenter cette prévision : ce qui la rend prudente, à quoi faire attention.
-            Il ne recalcule rien.
-          </p>
-          <button
-            type="button"
-            onClick={() => void demander()}
-            className="h-controle shrink-0 rounded-sm border border-line-field px-3 text-sm text-ink-2 hover:bg-surface-sunken"
-          >
-            Demander un avis
-          </button>
-        </div>
-      )}
-
-      {etat.statut === 'en_cours' && <p className="text-sm text-ink-3">Claude réfléchit…</p>}
-
-      {etat.statut === 'recu' && etat.commentaire.disponible && (
-        <div className="flex flex-col gap-groupe">
-          <div className="whitespace-pre-wrap text-sm text-ink-2">{etat.commentaire.texte}</div>
-          <p className="text-xs text-ink-3">{formaterCoutAppelIa(etat.commentaire.coutCents)}</p>
-        </div>
-      )}
-
-      {etat.statut === 'recu' && !etat.commentaire.disponible && (
-        <p className="text-sm text-ink-3">{etat.commentaire.raison}</p>
-      )}
-
-      {etat.statut === 'erreur' && <p className="text-sm text-depassement">{etat.message}</p>}
+      <DemandeClaude
+        presentation="Claude peut commenter cette prévision : ce qui la rend prudente, à quoi faire attention. Il ne recalcule rien."
+        libelleBouton="Demander un avis"
+        appeler={() =>
+          requeteApi<unknown>('/prevision/commenter', { method: 'POST', body: JSON.stringify({}) })
+        }
+        messageEchec="Le commentaire n’a pas pu être demandé."
+        formaterCout={formaterCoutAppelIa}
+      />
     </Panneau>
   );
 }
-
-type EtatResumeBrief =
-  | { statut: 'inactif' }
-  | { statut: 'en_cours' }
-  | { statut: 'recu'; commentaire: CommentaireIa }
-  | { statut: 'erreur'; message: string };
 
 /**
  * Résumé Claude du BRIEF avant-marché — panneau FRÈRE de `CommentaireClaude`
@@ -897,57 +844,20 @@ type EtatResumeBrief =
  * un état normal affiché tel quel, jamais une erreur.
  */
 function ResumeBriefClaude() {
-  const [etat, setEtat] = useState<EtatResumeBrief>({ statut: 'inactif' });
-
-  const demander = async (): Promise<void> => {
-    setEtat({ statut: 'en_cours' });
-    try {
-      const brut = await requeteApi<unknown>('/prevision/brief/commenter', {
-        method: 'POST',
-        body: JSON.stringify({}),
-      });
-      setEtat({ statut: 'recu', commentaire: schemaCommentaireIa.parse(brut) });
-    } catch (erreur) {
-      setEtat({
-        statut: 'erreur',
-        message:
-          erreur instanceof ErreurApi ? erreur.message : 'Le résumé n’a pas pu être demandé.',
-      });
-    }
-  };
-
   return (
     <Panneau titre="Résumé Claude du brief">
-      {etat.statut === 'inactif' && (
-        <div className="flex items-center justify-between gap-bloc">
-          <p className="text-sm text-ink-3">
-            Claude peut résumer le brief avant-marché : stock sous seuil, lots proches de leur DLC,
-            en plus de la prévision. Il ne recalcule rien.
-          </p>
-          <button
-            type="button"
-            onClick={() => void demander()}
-            className="h-controle shrink-0 rounded-sm border border-line-field px-3 text-sm text-ink-2 hover:bg-surface-sunken"
-          >
-            Résumer le brief
-          </button>
-        </div>
-      )}
-
-      {etat.statut === 'en_cours' && <p className="text-sm text-ink-3">Claude réfléchit…</p>}
-
-      {etat.statut === 'recu' && etat.commentaire.disponible && (
-        <div className="flex flex-col gap-groupe">
-          <div className="whitespace-pre-wrap text-sm text-ink-2">{etat.commentaire.texte}</div>
-          <p className="text-xs text-ink-3">{formaterCoutAppelIa(etat.commentaire.coutCents)}</p>
-        </div>
-      )}
-
-      {etat.statut === 'recu' && !etat.commentaire.disponible && (
-        <p className="text-sm text-ink-3">{etat.commentaire.raison}</p>
-      )}
-
-      {etat.statut === 'erreur' && <p className="text-sm text-depassement">{etat.message}</p>}
+      <DemandeClaude
+        presentation="Claude peut résumer le brief avant-marché : stock sous seuil, lots proches de leur DLC, en plus de la prévision. Il ne recalcule rien."
+        libelleBouton="Résumer le brief"
+        appeler={() =>
+          requeteApi<unknown>('/prevision/brief/commenter', {
+            method: 'POST',
+            body: JSON.stringify({}),
+          })
+        }
+        messageEchec="Le résumé n’a pas pu être demandé."
+        formaterCout={formaterCoutAppelIa}
+      />
     </Panneau>
   );
 }

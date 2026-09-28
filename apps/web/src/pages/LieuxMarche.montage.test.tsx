@@ -732,7 +732,7 @@ describe('Lieux de marché — l’état d’enregistrement, observé PENDANT qu
   });
 
   /**
-   * ═══ DÉFAUT RÉEL, NON CORRIGÉ (hors zone d'écriture de cette mission) ═══
+   * ═══ DÉFAUT RÉEL, CORRIGÉ LE 28/09/2026 (était en `it.fails`) ═══
    *
    * Même défaut que sur `Produits.tsx`, `Menus.tsx`, `Equipements.tsx` et
    * `NomenclatureVente.tsx` : `enregistrer()` (`LieuxMarche.tsx`) ne consulte
@@ -745,48 +745,46 @@ describe('Lieux de marché — l’état d’enregistrement, observé PENDANT qu
    * calcul automatique de distance (OpenRouteService, un appel externe payant
    * en quota) pour une seule intention d'enregistrement.
    *
-   * Ce test échoue intentionnellement : il décrit le comportement SAIN (une
-   * seule requête), que le code actuel ne tient pas.
+   * Ce test décrit le comportement SAIN (une seule requête). Il était en
+   * `it.fails` jusqu'au correctif : une garde en tête de `enregistrer()`
+   * refuse un second départ tant que le premier est en vol.
    */
-  it.fails(
-    'DÉFAUT RÉEL : un second Ctrl+S pendant l’envoi contourne le bouton `disabled` et repart en réseau',
-    async () => {
-      const resolveurs: Array<(valeur: unknown) => void> = [];
-      appel.mockImplementation((chemin: string, options?: RequestInit) => {
-        const methode = options?.method ?? 'GET';
-        if (methode === 'GET' && chemin === '/referentiel/lieux') {
-          return Promise.resolve(listeLieux([LIEU_COMPLET]));
-        }
-        if (methode === 'GET' && chemin === '/equipements') {
-          return Promise.resolve(parcEquipements(0));
-        }
-        if (methode === 'PATCH' && chemin === '/lieux/lieu-1') {
-          return new Promise((resoudre) => resolveurs.push(resoudre));
-        }
-        return Promise.reject(new Error(`Appel non attendu dans ce test : ${methode} ${chemin}`));
-      });
-      render(<LieuxMarche />);
+  it('un second Ctrl+S pendant l’envoi ne contourne plus le bouton `disabled` : une seule requête (défaut corrigé le 28/09/2026)', async () => {
+    const resolveurs: Array<(valeur: unknown) => void> = [];
+    appel.mockImplementation((chemin: string, options?: RequestInit) => {
+      const methode = options?.method ?? 'GET';
+      if (methode === 'GET' && chemin === '/referentiel/lieux') {
+        return Promise.resolve(listeLieux([LIEU_COMPLET]));
+      }
+      if (methode === 'GET' && chemin === '/equipements') {
+        return Promise.resolve(parcEquipements(0));
+      }
+      if (methode === 'PATCH' && chemin === '/lieux/lieu-1') {
+        return new Promise((resoudre) => resolveurs.push(resoudre));
+      }
+      return Promise.reject(new Error(`Appel non attendu dans ce test : ${methode} ${chemin}`));
+    });
+    render(<LieuxMarche />);
 
-      await screen.findByText('La Batte');
-      await userEvent.click(screen.getByText('La Batte'));
+    await screen.findByText('La Batte');
+    await userEvent.click(screen.getByText('La Batte'));
 
-      // Un champ SANS conséquence sur la validité du corps envoyé : la seule
-      // chose qui compte ici est que le focus reste DANS le formulaire.
-      const notes = document.querySelector('[name="notes"]') as HTMLInputElement;
-      notes.focus();
+    // Un champ SANS conséquence sur la validité du corps envoyé : la seule
+    // chose qui compte ici est que le focus reste DANS le formulaire.
+    const notes = document.querySelector('[name="notes"]') as HTMLInputElement;
+    notes.focus();
 
-      await userEvent.keyboard('{Control>}s{/Control}');
-      expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeDisabled();
+    await userEvent.keyboard('{Control>}s{/Control}');
+    expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeDisabled();
 
-      // Le bouton est déjà `disabled` — et pourtant rien n'empêche ce second
-      // Ctrl+S d'appeler `enregistrer()` une deuxième fois.
-      await userEvent.keyboard('{Control>}s{/Control}');
+    // Le bouton est déjà `disabled` — et pourtant rien n'empêche ce second
+    // Ctrl+S d'appeler `enregistrer()` une deuxième fois.
+    await userEvent.keyboard('{Control>}s{/Control}');
 
-      // Toujours résoudre AVANT l'assertion qui échoue, sinon les promesses
-      // fuient dans le test suivant.
-      resolveurs.forEach((r) => r(LIEU_COMPLET));
+    // Toujours résoudre AVANT l'assertion qui échoue, sinon les promesses
+    // fuient dans le test suivant.
+    resolveurs.forEach((r) => r(LIEU_COMPLET));
 
-      expect(resolveurs.length).toBe(1);
-    },
-  );
+    expect(resolveurs.length).toBe(1);
+  });
 });

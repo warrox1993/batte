@@ -740,7 +740,13 @@ export function DetailLot({ lot, nomIngredient, unite, onEcriture }: DetailLotPr
               disabled={envoiEnCours}
               className={CLASSE_BOUTON_PRIMAIRE}
             >
-              {destructionConfirmee ? 'Confirmer la destruction' : 'Appliquer le statut'}
+              {/* Libellé d'attente, comme les deux autres écritures de ce
+                  fichier (défaut connu corrigé le 28/09/2026). */}
+              {envoiEnCours
+                ? 'Enregistrement…'
+                : destructionConfirmee
+                  ? 'Confirmer la destruction'
+                  : 'Appliquer le statut'}
             </button>
           </div>
         </div>
