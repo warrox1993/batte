@@ -24,6 +24,8 @@ coverage/
 # Captures et traces produites par les outils d'audit Playwright
 .playwright-mcp/
 *.png
+# ...sauf les captures d'écran du README, prises sur la base de démonstration.
+!docs/captures/*.png
 
 # Divers
 .DS_Store
