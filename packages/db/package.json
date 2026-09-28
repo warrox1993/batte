@@ -1,6 +1,7 @@
 {
   "name": "@batte/db",
   "version": "0.1.0",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "description": "Schema Drizzle, migrations, sauvegarde et seed.",

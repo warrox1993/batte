@@ -43,10 +43,10 @@ import {
 /** Deux fournisseurs, dont un sans email : le classeur en porte beaucoup. */
 const FOURNISSEURS: FournisseurSource[] = [
   {
-    id: 'moulin-boland',
-    nom: 'Moulin Boland',
+    id: 'moulin-exemple',
+    nom: 'Moulin de l’Exemple',
     type: 'moulin',
-    email: 'info@moulinboland.be',
+    email: 'contact@moulin-exemple.invalid',
     telephone: null,
     adresse: null,
     delaiLivraisonJours: null,
@@ -56,8 +56,8 @@ const FOURNISSEURS: FournisseurSource[] = [
     categorieClasseur: 'Farines',
   },
   {
-    id: 'biopack',
-    nom: 'Biopack',
+    id: 'emballages-exemple',
+    nom: 'Emballages Exemple',
     type: 'grossiste',
     email: null,
     telephone: null,
@@ -77,7 +77,7 @@ const FOURNISSEURS: FournisseurSource[] = [
 const CATALOGUE: LigneCatalogueSource[] = [
   {
     id: 'l-complete',
-    fournisseurId: 'moulin-boland',
+    fournisseurId: 'moulin-exemple',
     ingredientNom: null,
     referenceFournisseur: 'T55-25',
     designation: 'Farine T55 Mistral',
@@ -92,7 +92,7 @@ const CATALOGUE: LigneCatalogueSource[] = [
   },
   {
     id: 'l-sans-prix',
-    fournisseurId: 'biopack',
+    fournisseurId: 'emballages-exemple',
     ingredientNom: null,
     referenceFournisseur: 'COVR-15PE',
     designation: 'Assiette bagasse 23 cm',
@@ -107,7 +107,7 @@ const CATALOGUE: LigneCatalogueSource[] = [
   },
   {
     id: 'l-sans-contenance',
-    fournisseurId: 'biopack',
+    fournisseurId: 'emballages-exemple',
     ingredientNom: null,
     referenceFournisseur: 'DWJ1',
     designation: 'Boissons sans alcool',
@@ -117,12 +117,12 @@ const CATALOGUE: LigneCatalogueSource[] = [
     prixCents: 315,
     tauxTvaBps: null,
     datePrix: '2026-08-18',
-    source: 'run-a/vajra.pdf',
+    source: 'run-a/grossiste-exemple.pdf',
     notes: null,
   },
   {
     id: 'l-sans-reference',
-    fournisseurId: 'moulin-boland',
+    fournisseurId: 'moulin-exemple',
     ingredientNom: null,
     referenceFournisseur: null,
     designation: 'Farine de sarrasin bio',
@@ -171,13 +171,13 @@ describe('Import du catalogue fournisseurs — 100 % ou echec', () => {
       .get()!.n;
     expect(n).toBe(FOURNISSEURS.length);
 
-    const boland = base
+    const moulin = base
       .select()
       .from(fournisseur)
-      .where(eq(fournisseur.id, 'moulin-boland'))
+      .where(eq(fournisseur.id, 'moulin-exemple'))
       .get()!;
     // La categorie metier ne survit que la : `type` ne connait que quatre valeurs.
-    expect(boland.notes).toContain('Farines');
+    expect(moulin.notes).toContain('Farines');
   });
 
   /* ═══════════════════════════════════════════════════════════════════════
@@ -281,7 +281,11 @@ describe('Import du catalogue fournisseurs — 100 % ou echec', () => {
     importerCatalogue(base, FOURNISSEURS, CATALOGUE);
     importerCatalogue(base, FOURNISSEURS, CATALOGUE);
 
-    const f = base.select().from(fournisseur).where(eq(fournisseur.id, 'biopack')).get()!;
+    const f = base
+      .select()
+      .from(fournisseur)
+      .where(eq(fournisseur.id, 'emballages-exemple'))
+      .get()!;
     const occurrences = (f.notes ?? '').split('[categorie-classeur]').length - 1;
     expect(occurrences).toBe(1);
     expect(f.notes).toContain('Emballages');

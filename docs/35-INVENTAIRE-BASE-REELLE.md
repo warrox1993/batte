@@ -301,7 +301,7 @@ Ce que le porteur perdrait, précisément, en repartant de zéro (base migrée m
 ## 5. Le script de nettoyage — écrit, **non exécuté**
 
 **Chemin** :
-`C:\Users\jeanb\AppData\Local\Temp\claude\C--Users-jeanb-Desktop-AppCrepe\4a0b963f-bb78-46de-9c20-a01043b227f3\scratchpad\inventaire-base-reelle-0801\nettoyage-demo.cjs`
+`C:\Users\<compte>\AppData\Local\Temp\claude\C--Users-<compte>-Desktop-AppCrepe\4a0b963f-bb78-46de-9c20-a01043b227f3\scratchpad\inventaire-base-reelle-0801\nettoyage-demo.cjs`
 
 Conception :
 

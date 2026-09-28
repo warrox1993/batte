@@ -46,10 +46,10 @@ const MESSAGES_HOSTILES: readonly string[] = [
   '401 {"type":"error","error":{"message":"invalid x-api-key: sk-ant-api03-AbCdEf123456"}}',
   'Request failed: authorization: Bearer sk-ant-api03-ZzZzZzZzZzZzZzZz',
   'Cannot find module ' +
-    "'C:\\Users\\jeanb\\Desktop\\AppCrepe\\node_modules\\@anthropic-ai\\sdk\\index.js'",
+    "'C:\\Users\\utilisateur\\Desktop\\AppCrepe\\node_modules\\@anthropic-ai\\sdk\\index.js'",
   'fetch failed to https://api.anthropic.com/v1/messages?api_key=sk-ant-api03-Secret1234',
-  'TypeError: x is not a function\n    at demanderCommentaire (/home/jeanb/appcrepe/src/ia/client.ts:120:5)\n    at process.processTicksAndRejections',
-  'read ENOENT /home/jeanb/.config/anthropic/credentials.json',
+  'TypeError: x is not a function\n    at demanderCommentaire (/home/utilisateur/appcrepe/src/ia/client.ts:120:5)\n    at process.processTicksAndRejections',
+  'read ENOENT /home/utilisateur/.config/anthropic/credentials.json',
 ];
 
 describe('assainirDetailIa', () => {

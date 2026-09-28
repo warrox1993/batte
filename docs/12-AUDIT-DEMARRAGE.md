@@ -24,7 +24,7 @@ $env:NODE_ENV='production'; $env:PORT='3099'; node node_modules/tsx/dist/cli.mjs
 ```
 
 ```
-Base ouverte : C:\Users\jeanb\Desktop\AppCrepe\donnees\batte.sqlite
+Base ouverte : C:\Users\<compte>\Desktop\AppCrepe\donnees\batte.sqlite
 Sauvegarde de démarrage : ...\sauvegardes\batte-20260728-1635.sqlite (720896 octets)
 
 Error: Not found handler already set for Fastify instance with prefix: '/'
@@ -179,10 +179,10 @@ disponible pour relancer sans reconstruire.
 Deux lignes en français lisible, puis du JSON brut :
 
 ```
-Base ouverte : C:\Users\jeanb\Desktop\AppCrepe\donnees\batte.sqlite
+Base ouverte : C:\Users\<compte>\Desktop\AppCrepe\donnees\batte.sqlite
 Sauvegarde de démarrage : ...\sauvegardes\batte-20260728-1655.sqlite (720896 octets)
-{"level":30,"time":1785257709535,"pid":13092,"hostname":"DhondtJ","msg":"Server listening at http://127.0.0.1:3099"}
-{"level":30,"time":1785257709536,"pid":13092,"hostname":"DhondtJ","msg":"API démarrée sur http://127.0.0.1:3099"}
+{"level":30,"time":1785257709535,"pid":13092,"hostname":"<poste>","msg":"Server listening at http://127.0.0.1:3099"}
+{"level":30,"time":1785257709536,"pid":13092,"hostname":"<poste>","msg":"API démarrée sur http://127.0.0.1:3099"}
 ```
 
 Puis **deux lignes JSON par requête HTTP**, y compris pour chaque fichier d'actif. La ligne utile

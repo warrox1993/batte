@@ -275,13 +275,13 @@ capture livrée par l'outil à 1568×711 — un downscale de transport, pas un r
 contenu visible correspond à ce qu'un poste de bureau classique afficherait, vérifié par mesure
 directe et non déduit de la taille du PNG).
 
-1. **`C:\Users\jeanb\AppData\Local\Temp\claude-chrome-screenshots-pKDvTF\screenshot-1785520737814-0.jpg`**
+1. **`C:\Users\<compte>\AppData\Local\Temp\claude-chrome-screenshots-pKDvTF\screenshot-1785520737814-0.jpg`**
    — Achats, CF-2026-0001 : « Envoyée à meunier-test@example.be le 31/07/2026 » sans aucune
    mention du mode test (§3.a).
-2. **`C:\Users\jeanb\AppData\Local\Temp\claude-chrome-screenshots-pKDvTF\screenshot-1785520760731-1.jpg`**
+2. **`C:\Users\<compte>\AppData\Local\Temp\claude-chrome-screenshots-pKDvTF\screenshot-1785520760731-1.jpg`**
    — Stock : Café moulu à `0 g` disponible, `▲ Lot périmé`, mais `3,00 €` toujours compté dans la
    valeur totale de 176,83 € (§3.b).
-3. **`C:\Users\jeanb\AppData\Local\Temp\claude-chrome-screenshots-pKDvTF\screenshot-1785520805833-3.jpg`**
+3. **`C:\Users\<compte>\AppData\Local\Temp\claude-chrome-screenshots-pKDvTF\screenshot-1785520805833-3.jpg`**
    — Registre AFSCA, onglet Non-conformités : « 1 NON-CONFORMITÉS » et description brute
    `9.5 °C … le 2026-07-31 (depart)` (§3.f, §3.g).
 

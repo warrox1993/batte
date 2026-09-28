@@ -84,7 +84,7 @@ c'est la ligne que lit le comptable. C'est exactement la famille du bug « marge
 `cout_matiere_cents = 29521` = 259,20 € de sirop **+ 36,01 € de pâte**. La graine contient
 donc le bon chiffre ; c'est le calcul temps réel qui perd la pâte.
 
-_Capture : `C:\Users\jeanb\Desktop\AppCrepe\sorties\test-07-DEFAUT-cout-matiere-sans-la-pate.png`_
+_Capture : `C:\Users\<compte>\Desktop\AppCrepe\sorties\test-07-DEFAUT-cout-matiere-sans-la-pate.png`_
 
 > **Mise à jour du 30/07/2026 — corrigé.** `production.sessionId` peut désormais être renseigné à
 > la création (`packages/db/src/services/production.ts:190-191,289,313`, vérification
@@ -799,7 +799,7 @@ provenait de mon propre outillage de test, pas de l'application.
 
 ## 6. Captures
 
-Toutes dans `C:\Users\jeanb\Desktop\AppCrepe\sorties\`.
+Toutes dans `C:\Users\<compte>\Desktop\AppCrepe\sorties\`.
 
 | Fichier                                                               | Ce qu'il montre                                                              |
 | --------------------------------------------------------------------- | ---------------------------------------------------------------------------- |

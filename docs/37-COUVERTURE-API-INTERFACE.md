@@ -86,7 +86,7 @@ await app.close();
 ```
 
 ```bash
-cd C:/Users/jeanb/Desktop/AppCrepe
+cd C:/Users/<compte>/Desktop/AppCrepe
 CHEMIN_BASE=":memory:" npx tsx <scratchpad>/dump-routes.mts > routes.json
 ```
 

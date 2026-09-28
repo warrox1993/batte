@@ -5,7 +5,7 @@
 > dossier temporaire de session, `migrer` + `seed` + `seed:demo`. Vérifié avant et après par
 > `GET /api/sante` sur les deux instances : la mienne renvoie
 > `...\scratchpad\instance\donnees\batte-test.sqlite`, celle du porteur (`:3001`) renvoie
-> `C:\Users\jeanb\Desktop\AppCrepe\donnees\batte.sqlite` — deux chemins distincts, aucune requête
+> `C:\Users\<compte>\Desktop\AppCrepe\donnees\batte.sqlite` — deux chemins distincts, aucune requête
 > écrite sur la seconde. Aucun appel Claude n'a été déclenché (`ANTHROPIC_API_KEY` vide, confirmé
 > aussi bien côté shell que par l'écran Assistance IA lui-même). Aucun fichier du dépôt n'a été
 > modifié en dehors de celui-ci — aucune ligne de code corrigée, aucun sous-agent dispatché.
@@ -307,13 +307,13 @@ Toutes prises après vérification de `document.documentElement.clientWidth` (me
 corriger ; la capture livrée par l'outil à 1568 px de large est un downscale de transport,
 comme déjà noté dans docs/27, pas un rendu tronqué).
 
-1. **`C:\Users\jeanb\AppData\Local\Temp\claude-chrome-screenshots-pKDvTF\screenshot-1785551499887-14.jpg`**
+1. **`C:\Users\<compte>\AppData\Local\Temp\claude-chrome-screenshots-pKDvTF\screenshot-1785551499887-14.jpg`**
    — Écran Produits : « Erreur inattendue, sans plus de détail. » à la place de la liste,
    alors que les 5 appels API sous-jacents répondent tous 200 (§3.a — l'arrêt dur).
-2. **`C:\Users\jeanb\AppData\Local\Temp\claude-chrome-screenshots-pKDvTF\screenshot-1785551913324-15.jpg`**
+2. **`C:\Users\<compte>\AppData\Local\Temp\claude-chrome-screenshots-pKDvTF\screenshot-1785551913324-15.jpg`**
    — Écran Sessions : même message d'erreur sur le seul widget « Seuils légaux », le reste de
    l'écran restant fonctionnel (§3.b).
-3. **`C:\Users\jeanb\AppData\Local\Temp\claude-chrome-screenshots-pKDvTF\screenshot-1785551996900-16.jpg`**
+3. **`C:\Users\<compte>\AppData\Local\Temp\claude-chrome-screenshots-pKDvTF\screenshot-1785551996900-16.jpg`**
    — Achats, CF-2026-0001 rouverte après navigation : « Envoyée à meunier-test@example.be le
    01/08/2026. » sans aucune mention du mode test, confirmé aussi en texte brut par
    `get_page_text` (§3.d — l'impasse silencieuse). Le panneau de détail déborde légèrement à

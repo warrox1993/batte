@@ -211,10 +211,10 @@ codées en dur.
   0,09 kg vergeoise blonde, 0,008 kg sel, 1 gousse de vanille, 0,03 L rhum brun.
 - **Recette R2** (sarrasin-châtaigne) — quantités par fournée **pas encore écrites**.
 - **Coût matière R1 : 3,19 € HTVA la fournée**, au 6 août 2026. Calculé sur les meilleurs
-  prix réellement reçus — farine 0,53 €/kg (Les Moulins du Val Dieu), lait 1,01 €/L et œufs
-  0,1823 €/pièce et beurre 5,65 €/kg (Maison Schoonbrodt), vergeoise 1,66 €/kg (Keramis),
-  sel 12,79 €/kg (Vajra). **Vanille et rhum ne sont chez aucun fournisseur consulté** : le
-  total est donc un plancher, pas le coût complet.
+  prix réellement reçus pour la farine, le lait, les œufs, le beurre, la vergeoise et le sel.
+  Les devis et le nom des fournisseurs restent hors du dépôt (retirés le 28/09/2026 avant la
+  publication : ce sont des prix négociés avec des tiers). **Vanille et rhum ne sont chez aucun
+  fournisseur consulté** : le total est donc un plancher, pas le coût complet.
   Source : un script de calcul tenu hors du dépôt, à rejouer à chaque nouveau devis — les prix
   bougent, ce chiffre aussi.
 - **Coût par crêpe : INCONNU.** Il faut le rendement d'une fournée, qui n'a jamais été compté.
