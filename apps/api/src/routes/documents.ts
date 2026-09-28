@@ -59,6 +59,7 @@ import {
   libellePeriodeMensuelle,
   statutSession,
 } from '../documents/donnees.js';
+import { LIMITE_GENERATION_DOCUMENT } from '../plugins/limitation-debit.js';
 
 /**
  * Periode mensuelle `AAAA-MM`.
@@ -113,6 +114,7 @@ export function routesDocuments(base: BaseBatte): FastifyPluginAsync {
     /** Fiche technique d'une VERSION de recette (`docs/01` module 1). */
     app.get<{ Params: { id: string } }>(
       '/documents/fiche-technique/:id',
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
       async (requete, reponse) => {
         const donnees = donneesFicheTechnique(base, requete.params.id);
         if (donnees === null) throw new ErreurIntrouvable('Recette', requete.params.id);
@@ -139,26 +141,30 @@ export function routesDocuments(base: BaseBatte): FastifyPluginAsync {
      * suivante, et l'ancienne reste consultable pour prouver ce qui etait
      * affiche tel jour.
      */
-    app.get('/documents/affichette-allergenes', async (_requete, reponse) => {
-      const donnees = donneesAffichetteAllergenes(base);
-      if (donnees.produits.length === 0) {
-        throw new ErreurMetier(
-          'aucun_produit_actif',
-          "Aucun produit actif : l'affichette serait vide. Activez au moins un produit de la carte avant de l'éditer.",
-        );
-      }
+    app.get(
+      '/documents/affichette-allergenes',
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
+      async (_requete, reponse) => {
+        const donnees = donneesAffichetteAllergenes(base);
+        if (donnees.produits.length === 0) {
+          throw new ErreurMetier(
+            'aucun_produit_actif',
+            "Aucun produit actif : l'affichette serait vide. Activez au moins un produit de la carte avant de l'éditer.",
+          );
+        }
 
-      const doc = await rendrePdf(base, {
-        type: 'affichette_allergenes',
-        objetId: null,
-        numero: null,
-        titre: 'Affichette allergènes',
-        ...affichetteAllergenes(donnees),
-        parametresSource: donnees,
-      });
+        const doc = await rendrePdf(base, {
+          type: 'affichette_allergenes',
+          objetId: null,
+          numero: null,
+          titre: 'Affichette allergènes',
+          ...affichetteAllergenes(donnees),
+          parametresSource: donnees,
+        });
 
-      return servirFichier(doc, MIME_PDF, reponse);
-    });
+        return servirFichier(doc, MIME_PDF, reponse);
+      },
+    );
 
     /**
      * Etiquette a coller sur le bac de pate (document interne de tracabilite).
@@ -171,6 +177,7 @@ export function routesDocuments(base: BaseBatte): FastifyPluginAsync {
      */
     app.get<{ Params: { id: string } }>(
       '/documents/etiquette-bac/:id',
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
       async (requete, reponse) => {
         const production = lireProductionDetail(base, requete.params.id);
         if (production === null) throw new ErreurIntrouvable('Production', requete.params.id);
@@ -207,6 +214,7 @@ export function routesDocuments(base: BaseBatte): FastifyPluginAsync {
      */
     app.get<{ Params: { id: string } }>(
       '/documents/rapport-session/:id',
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
       async (requete, reponse) => {
         const statut = statutSession(base, requete.params.id);
         if (statut === null) throw new ErreurIntrouvable('Session', requete.params.id);
@@ -244,6 +252,7 @@ export function routesDocuments(base: BaseBatte): FastifyPluginAsync {
      */
     app.get<{ Querystring: { periode?: string } }>(
       '/documents/registre-afsca',
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
       async (requete, reponse) => {
         const { periode } = schemaPeriodeMensuelle.parse(requete.query);
         const annee = Number.parseInt(periode.slice(0, 4), 10);
@@ -308,6 +317,7 @@ export function routesDocuments(base: BaseBatte): FastifyPluginAsync {
      */
     app.get<{ Params: { lot: string } }>(
       '/documents/fiche-rappel/:lot',
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
       async (requete, reponse) => {
         const aval = tracabiliteAvalLot(base, requete.params.lot);
         const donnees = donneesFicheRappelLot(base, aval.lotId);
@@ -333,23 +343,28 @@ export function routesDocuments(base: BaseBatte): FastifyPluginAsync {
        ═══════════════════════════════════════════════════════════════════════ */
 
     /** Etat de stock valorise a aujourd'hui (`docs/01` module 2). */
-    app.get('/exports/stock', async (_requete, reponse) => {
-      const jour = aujourdHui();
-      const donnees = donneesExportStock(base, jour);
-      const octets = await exportStockValorise(donnees);
+    app.get(
+      '/exports/stock',
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
+      async (_requete, reponse) => {
+        const jour = aujourdHui();
+        const donnees = donneesExportStock(base, jour);
+        const octets = await exportStockValorise(donnees);
 
-      const doc = await archiverExportExcel(
-        base,
-        { objetId: `stock-${jour}`, numero: null, parametresSource: donnees },
-        octets,
-      );
+        const doc = await archiverExportExcel(
+          base,
+          { objetId: `stock-${jour}`, numero: null, parametresSource: donnees },
+          octets,
+        );
 
-      return servirFichier(doc, MIME_XLSX, reponse);
-    });
+        return servirFichier(doc, MIME_XLSX, reponse);
+      },
+    );
 
     /** Journal des recettes de l'exercice — obligatoire sous franchise de TVA. */
     app.get<{ Querystring: { annee?: string } }>(
       '/exports/journal-recettes',
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
       async (requete, reponse) => {
         const { annee } = schemaExercice.parse(requete.query);
         const donnees = donneesJournalRecettes(base, annee);
@@ -368,6 +383,7 @@ export function routesDocuments(base: BaseBatte): FastifyPluginAsync {
     /** Journal des achats de l'exercice, une ligne par reception. */
     app.get<{ Querystring: { annee?: string } }>(
       '/exports/journal-achats',
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
       async (requete, reponse) => {
         const { annee } = schemaExercice.parse(requete.query);
         const donnees = donneesJournalAchats(base, annee);
@@ -386,6 +402,7 @@ export function routesDocuments(base: BaseBatte): FastifyPluginAsync {
     /** Journal complet des mouvements de stock — la tracabilite exigee par l'AFSCA. */
     app.get<{ Querystring: { annee?: string } }>(
       '/exports/mouvements',
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
       async (requete, reponse) => {
         const { annee } = schemaExercice.parse(requete.query);
         const donnees = donneesExportMouvements(base, annee);

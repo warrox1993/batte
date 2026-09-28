@@ -32,6 +32,44 @@ describe('parserEuros', () => {
     expect(parserEuros('12,3,4')).toBeNull();
   });
 
+  it('refuse un second point ou un point seul après un signe, comme avant le correctif ReDoS', () => {
+    expect(parserEuros('1.2.3')).toBeNull();
+    expect(parserEuros('--1')).toBeNull();
+    expect(parserEuros('1-')).toBeNull();
+    expect(parserEuros(',5')).toBe(50);
+    expect(parserEuros('5,')).toBe(500);
+  });
+
+  /**
+   * CodeQL js/polynomial-redos (28/09/2026) : l'ancien motif `^-?\d*\.?\d*$`
+   * essayait chaque partage d'une longue suite de chiffres entre ses deux
+   * `\d*` avant de refuser le caractère final (mesuré : 1 s pour 40 000
+   * chiffres, ~6 s pour 100 000). Le seuil laisse une marge à une CI lente.
+   */
+  it('refuse en temps linéaire une longue suite de chiffres invalide (pas de ReDoS)', () => {
+    const debut = performance.now();
+    expect(parserEuros(`${'9'.repeat(100_000)}x`)).toBeNull();
+    expect(performance.now() - debut).toBeLessThan(500);
+  });
+
+  it('accepte et refuse exactement les mêmes saisies qu’avec l’ancien motif', () => {
+    // Référence : l'ancien comportement, motif `^-?\d*\.?\d*$` compris. Les
+    // chaînes générées ne contiennent ni blanc, ni €, ni virgule : le
+    // nettoyage de `parserEuros` les laisse telles quelles.
+    const ancienParserEuros = (chaine: string): boolean =>
+      chaine !== '' && /^-?\d*\.?\d*$/.test(chaine) && Number.isFinite(Number(chaine));
+    const alphabet = ['-', '.', '1', '9', 'x'];
+    // Toutes les chaînes de 0 à 4 caractères sur cet alphabet : 781 cas.
+    let chaines = [''];
+    for (let longueur = 0; longueur < 4; longueur++) {
+      chaines = chaines.concat(chaines.flatMap((c) => alphabet.map((a) => c + a)));
+      chaines = [...new Set(chaines)];
+    }
+    for (const chaine of chaines) {
+      expect(parserEuros(chaine) !== null, JSON.stringify(chaine)).toBe(ancienParserEuros(chaine));
+    }
+  });
+
   it('arrondit au centime le plus proche', () => {
     expect(parserEuros('0,005')).toBe(1);
     expect(parserEuros('0,004')).toBe(0);

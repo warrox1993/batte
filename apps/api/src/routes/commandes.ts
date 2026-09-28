@@ -33,6 +33,7 @@ import {
 import { bonCommande } from '../documents/gabarits.js';
 import { rendrePdf } from '../documents/rendu.js';
 import { envoyerMail } from '../mail.js';
+import { LIMITE_APPEL_EXTERNE, LIMITE_GENERATION_DOCUMENT } from '../plugins/limitation-debit.js';
 
 /** Corps du mail envoye au fournisseur : lisible, sans mise en forme HTML. */
 function corpsMailCommande(detail: NonNullable<ReturnType<typeof lireCommandeDetail>>): string {
@@ -114,17 +115,21 @@ export function routesCommandes(base: BaseBatte): FastifyPluginAsync {
      * demande, ARCHIVE a chaque appel (D-026) : consulter le PDF plusieurs
      * fois cree plusieurs versions numerotees, jamais un ecrasement silencieux.
      */
-    app.get<{ Params: { id: string } }>('/commandes/:id/pdf', async (requete, reponse) => {
-      const detail = lireCommandeDetail(base, requete.params.id);
-      if (detail === null) throw new ErreurIntrouvable('Commande', requete.params.id);
+    app.get<{ Params: { id: string } }>(
+      '/commandes/:id/pdf',
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
+      async (requete, reponse) => {
+        const detail = lireCommandeDetail(base, requete.params.id);
+        if (detail === null) throw new ErreurIntrouvable('Commande', requete.params.id);
 
-      const doc = await genererPdfCommande(base, detail);
+        const doc = await genererPdfCommande(base, detail);
 
-      const octets = readFileSync(doc.chemin);
-      reponse.header('Content-Disposition', `inline; filename="${basename(doc.chemin)}"`);
-      reponse.type('application/pdf');
-      return octets;
-    });
+        const octets = readFileSync(doc.chemin);
+        reponse.header('Content-Disposition', `inline; filename="${basename(doc.chemin)}"`);
+        reponse.type('application/pdf');
+        return octets;
+      },
+    );
 
     /**
      * Calcule le point de commande de chaque ingredient et cree des brouillons
@@ -178,67 +183,71 @@ export function routesCommandes(base: BaseBatte): FastifyPluginAsync {
      * un `brouillon` : c'est la garantie technique de D-009, pas seulement une
      * convention d'ecran.
      */
-    app.post<{ Params: { id: string } }>('/commandes/:id/envoyer', async (requete) => {
-      const corps = schemaEnvoiCommandeRequete.parse(requete.body ?? {});
+    app.post<{ Params: { id: string } }>(
+      '/commandes/:id/envoyer',
+      { config: { rateLimit: LIMITE_APPEL_EXTERNE } },
+      async (requete) => {
+        const corps = schemaEnvoiCommandeRequete.parse(requete.body ?? {});
 
-      const avant = lireCommandeDetail(base, requete.params.id);
-      if (avant === null) throw new ErreurIntrouvable('Commande', requete.params.id);
+        const avant = lireCommandeDetail(base, requete.params.id);
+        if (avant === null) throw new ErreurIntrouvable('Commande', requete.params.id);
 
-      if (avant.statut !== 'validee') {
-        throw new ErreurMetier(
-          'commande_non_validee',
-          `La commande ${avant.numero} est en statut « ${avant.statut} » : seule une ` +
-            "commande validée peut être envoyée. Validez-la d'abord.",
-        );
-      }
+        if (avant.statut !== 'validee') {
+          throw new ErreurMetier(
+            'commande_non_validee',
+            `La commande ${avant.numero} est en statut « ${avant.statut} » : seule une ` +
+              "commande validée peut être envoyée. Validez-la d'abord.",
+          );
+        }
 
-      const email = corps.email ?? avant.fournisseurEmail ?? '';
-      if (email.trim() === '') {
-        throw new ErreurMetier(
-          'email_manquant',
-          `Aucune adresse email n'est configurée pour ${avant.fournisseurNom}. ` +
-            'Renseignez-en une pour envoyer ce bon de commande.',
-          { champs: { email: 'Adresse email requise.' } },
-        );
-      }
+        const email = corps.email ?? avant.fournisseurEmail ?? '';
+        if (email.trim() === '') {
+          throw new ErreurMetier(
+            'email_manquant',
+            `Aucune adresse email n'est configurée pour ${avant.fournisseurNom}. ` +
+              'Renseignez-en une pour envoyer ce bon de commande.',
+            { champs: { email: 'Adresse email requise.' } },
+          );
+        }
 
-      // Le PDF part EN PIECE JOINTE : un fournisseur ne travaille pas sur un
-      // corps de mail en texte brut, et le document archive est la seule trace
-      // de ce qui a ete commande.
-      const doc = await genererPdfCommande(base, avant);
+        // Le PDF part EN PIECE JOINTE : un fournisseur ne travaille pas sur un
+        // corps de mail en texte brut, et le document archive est la seule trace
+        // de ce qui a ete commande.
+        const doc = await genererPdfCommande(base, avant);
 
-      const resultatMail = await envoyerMail({
-        destinataire: email,
-        sujet: `Bon de commande ${avant.numero} — ${avant.fournisseurNom}`,
-        corpsTexte: corpsMailCommande(avant),
-        piecesJointes: [{ nomFichier: basename(doc.chemin), chemin: doc.chemin }],
-      });
+        const resultatMail = await envoyerMail({
+          destinataire: email,
+          sujet: `Bon de commande ${avant.numero} — ${avant.fournisseurNom}`,
+          corpsTexte: corpsMailCommande(avant),
+          piecesJointes: [{ nomFichier: basename(doc.chemin), chemin: doc.chemin }],
+        });
 
-      // Persiste LE FAIT « ce mail-là est-il parti ? » (mission « le seul
-      // piège silencieux qui reste », 01/08/2026) : sans cela, ce fait
-      // n'existait plus nulle part une fois cette réponse HTTP partie — une
-      // commande envoyée en mode test se relisait, après un rechargement de
-      // page, exactement comme un envoi réel (voir
-      // `services/commandes.ts::marquerEnvoyee`).
-      marquerEnvoyee(base, requete.params.id, email, {
-        modeTest: resultatMail.modeTest,
-        cheminFichierTest: resultatMail.cheminFichierTest,
-      });
+        // Persiste LE FAIT « ce mail-là est-il parti ? » (mission « le seul
+        // piège silencieux qui reste », 01/08/2026) : sans cela, ce fait
+        // n'existait plus nulle part une fois cette réponse HTTP partie — une
+        // commande envoyée en mode test se relisait, après un rechargement de
+        // page, exactement comme un envoi réel (voir
+        // `services/commandes.ts::marquerEnvoyee`).
+        marquerEnvoyee(base, requete.params.id, email, {
+          modeTest: resultatMail.modeTest,
+          cheminFichierTest: resultatMail.cheminFichierTest,
+        });
 
-      const apres = lireCommandeDetail(base, requete.params.id);
-      if (apres === null) throw new ErreurIntrouvable('Commande', requete.params.id);
+        const apres = lireCommandeDetail(base, requete.params.id);
+        if (apres === null) throw new ErreurIntrouvable('Commande', requete.params.id);
 
-      return schemaResultatEnvoiCommande.parse({
-        ...apres,
-        // Toujours CONNU ici (voir le commentaire du champ sur
-        // `schemaResultatEnvoiCommande`) : repris directement du résultat de
-        // CET appel, plutôt que relu depuis `apres.envoiModeTest` — les deux
-        // valent la même chose puisque `marquerEnvoyee` vient de journaliser
-        // ce même fait dans la même requête, mais l'écrire explicitement ne
-        // dépend d'aucune relecture.
-        envoiModeTest: resultatMail.modeTest,
-        cheminFichierTest: resultatMail.cheminFichierTest,
-      });
-    });
+        return schemaResultatEnvoiCommande.parse({
+          ...apres,
+          // Toujours CONNU ici (voir le commentaire du champ sur
+          // `schemaResultatEnvoiCommande`) : repris directement du résultat de
+          // CET appel, plutôt que relu depuis `apres.envoiModeTest` — les deux
+          // valent la même chose puisque `marquerEnvoyee` vient de journaliser
+          // ce même fait dans la même requête, mais l'écrire explicitement ne
+          // dépend d'aucune relecture.
+          envoiModeTest: resultatMail.modeTest,
+          cheminFichierTest: resultatMail.cheminFichierTest,
+        });
+      },
+    );
   };
 }

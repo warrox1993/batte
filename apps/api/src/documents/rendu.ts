@@ -12,7 +12,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, statSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { chromium, type Browser } from 'playwright';
 import { horodatageFichier, maintenantUtc, nouvelIdentifiant } from '@batte/core';
@@ -233,8 +233,15 @@ export async function archiverFichierGenere(
 
   await ecrireFichier(chemin);
 
-  const tailleOctets = statSync(chemin).size;
-  const hashSha256 = createHash('sha256').update(readFileSync(chemin)).digest('hex');
+  // Taille et empreinte calculees sur UNE SEULE lecture du fichier. Avec un
+  // `statSync` puis un `readFileSync` separes, un fichier modifie entre les
+  // deux (autre processus, ecriture differee) aurait ete archive avec une
+  // taille et une empreinte qui ne decrivent pas le meme contenu, ce qu'un
+  // controle d'integrite ulterieur signalerait a tort ou a raison sans qu'on
+  // puisse savoir lequel (CodeQL js/file-system-race, 28/09/2026).
+  const contenu = readFileSync(chemin);
+  const tailleOctets = contenu.length;
+  const hashSha256 = createHash('sha256').update(contenu).digest('hex');
   const dateGeneration = maintenantUtc();
   const id = nouvelIdentifiant();
 

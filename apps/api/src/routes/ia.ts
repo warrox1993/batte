@@ -27,6 +27,7 @@ import {
 } from '@batte/db';
 import { assistanceConfiguree, demanderCommentaire } from '../ia/client.js';
 import { analyseEcart } from '../ia/usages.js';
+import { LIMITE_APPEL_EXTERNE } from '../plugins/limitation-debit.js';
 
 export function routesIa(base: BaseBatte): FastifyPluginAsync {
   return async (app) => {
@@ -78,35 +79,39 @@ export function routesIa(base: BaseBatte): FastifyPluginAsync {
      * caisse « nuls », que Claude aurait alors commentes comme un vrai zero
      * plutot que comme une donnee absente.
      */
-    app.post<{ Params: { id: string } }>('/ia/analyse-ecart/:id', async (requete) => {
-      const detail = lireSessionDetail(base, requete.params.id);
-      if (detail === null) throw new ErreurIntrouvable('Session', requete.params.id);
-      if (detail.statut !== 'cloturee') {
-        throw new ErreurMetier(
-          'session_non_cloturee',
-          `Cette session est en statut « ${detail.statut} » : l'analyse d'écart n'est ` +
-            "disponible qu'après clôture.",
+    app.post<{ Params: { id: string } }>(
+      '/ia/analyse-ecart/:id',
+      { config: { rateLimit: LIMITE_APPEL_EXTERNE } },
+      async (requete) => {
+        const detail = lireSessionDetail(base, requete.params.id);
+        if (detail === null) throw new ErreurIntrouvable('Session', requete.params.id);
+        if (detail.statut !== 'cloturee') {
+          throw new ErreurMetier(
+            'session_non_cloturee',
+            `Cette session est en statut « ${detail.statut} » : l'analyse d'écart n'est ` +
+              "disponible qu'après clôture.",
+          );
+        }
+
+        const reponse = await demanderCommentaire(
+          base,
+          lireParametres(base),
+          analyseEcart({
+            numero: detail.numero,
+            dateSession: detail.dateSession,
+            crepesProduites: detail.crepesProduites,
+            crepesVendues: detail.crepesVendues,
+            crepesInvendues: detail.crepesInvendues,
+            caTotalCents: detail.caTotalCents,
+            margeNetteCents: detail.margeNetteCents,
+            ecartCaisseCents: detail.ecartCaisseCents,
+            prevuCrepes: null,
+            notesQualitatives: detail.notesQualitatives,
+          }),
         );
-      }
 
-      const reponse = await demanderCommentaire(
-        base,
-        lireParametres(base),
-        analyseEcart({
-          numero: detail.numero,
-          dateSession: detail.dateSession,
-          crepesProduites: detail.crepesProduites,
-          crepesVendues: detail.crepesVendues,
-          crepesInvendues: detail.crepesInvendues,
-          caTotalCents: detail.caTotalCents,
-          margeNetteCents: detail.margeNetteCents,
-          ecartCaisseCents: detail.ecartCaisseCents,
-          prevuCrepes: null,
-          notesQualitatives: detail.notesQualitatives,
-        }),
-      );
-
-      return schemaCommentaireIa.parse(reponse);
-    });
+        return schemaCommentaireIa.parse(reponse);
+      },
+    );
   };
 }

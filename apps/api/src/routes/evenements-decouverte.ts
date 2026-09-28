@@ -100,6 +100,7 @@ import {
   rejeterPropositionEvenement,
   validerPropositionEvenement,
 } from '@batte/db';
+import { LIMITE_APPEL_EXTERNE } from '../plugins/limitation-debit.js';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Source de propositions — interface remplaçable
@@ -513,46 +514,50 @@ export function routesEvenementsDecouverte(
 
     /* ─── Déclenchement manuel de la recherche (pas de tâche planifiée) ───── */
 
-    app.post('/evenements-decouverte/rechercher', async (requete) => {
-      const corps = schemaDemandeRecherche.parse(requete.body);
-      const lieu = lieuPourRechercheEvenements(base, corps.lieuId);
-      if (lieu === undefined) throw new ErreurIntrouvable('Lieu de marché', corps.lieuId);
+    app.post(
+      '/evenements-decouverte/rechercher',
+      { config: { rateLimit: LIMITE_APPEL_EXTERNE } },
+      async (requete) => {
+        const corps = schemaDemandeRecherche.parse(requete.body);
+        const lieu = lieuPourRechercheEvenements(base, corps.lieuId);
+        if (lieu === undefined) throw new ErreurIntrouvable('Lieu de marché', corps.lieuId);
 
-      const parametres = lireParametres(base);
-      const resultat = await sourcePropositions(base, parametres, {
-        lieuNom: lieu.nom,
-        rayonKm: lieu.rayonRechercheEvenementsKm,
-      });
-
-      if (!resultat.disponible) {
-        return schemaResultatRechercheEvenements.parse({
-          disponible: false,
-          raison: resultat.raison,
+        const parametres = lireParametres(base);
+        const resultat = await sourcePropositions(base, parametres, {
+          lieuNom: lieu.nom,
+          rayonKm: lieu.rayonRechercheEvenementsKm,
         });
-      }
 
-      const propositions = resultat.propositions.map((brute) =>
-        creerPropositionEvenementIa(base, {
-          lieuId: lieu.id,
-          nom: brute.nom,
-          type: brute.type,
-          dateDebut: brute.dateDebut,
-          dateFin: brute.dateFin,
-          portee: brute.portee,
-          intensiteEstimee: brute.intensiteEstimee,
-          distanceKm: brute.distanceEstimeeKm,
-          communeTexte: brute.communeTexte,
-          source: brute.source,
-          resume: brute.resume,
-        }),
-      );
+        if (!resultat.disponible) {
+          return schemaResultatRechercheEvenements.parse({
+            disponible: false,
+            raison: resultat.raison,
+          });
+        }
 
-      return schemaResultatRechercheEvenements.parse({
-        disponible: true,
-        propositions: trierParRentabiliteDecroissante(propositions),
-        coutCents: resultat.coutCents,
-      });
-    });
+        const propositions = resultat.propositions.map((brute) =>
+          creerPropositionEvenementIa(base, {
+            lieuId: lieu.id,
+            nom: brute.nom,
+            type: brute.type,
+            dateDebut: brute.dateDebut,
+            dateFin: brute.dateFin,
+            portee: brute.portee,
+            intensiteEstimee: brute.intensiteEstimee,
+            distanceKm: brute.distanceEstimeeKm,
+            communeTexte: brute.communeTexte,
+            source: brute.source,
+            resume: brute.resume,
+          }),
+        );
+
+        return schemaResultatRechercheEvenements.parse({
+          disponible: true,
+          propositions: trierParRentabiliteDecroissante(propositions),
+          coutCents: resultat.coutCents,
+        });
+      },
+    );
 
     /* ─── Propositions en attente — triées par rentabilité décroissante ───── */
 

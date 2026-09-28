@@ -111,6 +111,7 @@ import {
   briefAvantMarche as demandeCommentaireBrief,
 } from '../ia/usages.js';
 import { releverMeteo, type ResultatReleve } from '../meteo/open-meteo.js';
+import { LIMITE_APPEL_EXTERNE, LIMITE_GENERATION_DOCUMENT } from '../plugins/limitation-debit.js';
 
 /** Fenetre par defaut quand le lieu n'a pas d'horaires renseignes. */
 const HEURE_DEBUT_DEFAUT = '08:00';
@@ -1404,7 +1405,7 @@ export function routesPrevisions(
      * cela, n'importe quel appelant pourrait faire commenter des chiffres qui ne
      * sortent pas du moteur.
      */
-    app.post('/prevision/commenter', async () => {
+    app.post('/prevision/commenter', { config: { rateLimit: LIMITE_APPEL_EXTERNE } }, async () => {
       const calcul = await previsionCourante(base, false, options.racineUrlMeteo);
       const prevision = schemaPrevision.parse(vuePrevision(base, calcul));
 
@@ -1424,79 +1425,83 @@ export function routesPrevisions(
      * version a chaque appel (D-026) — c'est le meme comportement que les
      * autres gabarits PDF de l'application.
      */
-    app.get('/prevision/brief', async (_requete, reponse) => {
-      const calcul = await previsionCourante(base, false, options.racineUrlMeteo);
-      const prevision = schemaPrevision.parse(vuePrevision(base, calcul));
+    app.get(
+      '/prevision/brief',
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
+      async (_requete, reponse) => {
+        const calcul = await previsionCourante(base, false, options.racineUrlMeteo);
+        const prevision = schemaPrevision.parse(vuePrevision(base, calcul));
 
-      const jour = aujourdHui();
-      const horizonJours = calcul.parametres.entier('brief_horizon_alerte_dlc_jours');
+        const jour = aujourdHui();
+        const horizonJours = calcul.parametres.entier('brief_horizon_alerte_dlc_jours');
 
-      const lignesStock = etatDuStock(base, jour);
-      const alertesStock = lignesStock
-        .filter((l) => statutStock(l.quantiteDisponible, l.stockSecurite) !== 'conforme')
-        .map((l) => ({
-          nomIngredient: l.nom,
-          quantiteDisponible: l.quantiteDisponible,
-          stockSecurite: l.stockSecurite,
-          unite: l.unite,
-        }));
+        const lignesStock = etatDuStock(base, jour);
+        const alertesStock = lignesStock
+          .filter((l) => statutStock(l.quantiteDisponible, l.stockSecurite) !== 'conforme')
+          .map((l) => ({
+            nomIngredient: l.nom,
+            quantiteDisponible: l.quantiteDisponible,
+            stockSecurite: l.stockSecurite,
+            unite: l.unite,
+          }));
 
-      const alertesDlc = lotsAlerteDlc(base, jour, horizonJours)
-        .filter((l): l is typeof l & { dateDlc: string } => l.dateDlc !== null)
-        .map((l) => ({
-          ingredientNom: l.ingredientNom,
-          numeroLotFournisseur: l.numeroLotFournisseur,
-          dateDlc: l.dateDlc,
-        }));
+        const alertesDlc = lotsAlerteDlc(base, jour, horizonJours)
+          .filter((l): l is typeof l & { dateDlc: string } => l.dateDlc !== null)
+          .map((l) => ({
+            ingredientNom: l.ingredientNom,
+            numeroLotFournisseur: l.numeroLotFournisseur,
+            dateDlc: l.dateDlc,
+          }));
 
-      const rendu = briefAvantMarche({
-        session: {
+        const rendu = briefAvantMarche({
+          session: {
+            numero: calcul.session.numero,
+            dateSession: calcul.session.dateSession,
+            lieuNom: calcul.session.lieuNom,
+          },
+          crepesRecommandees: prevision.crepesRecommandees,
+          crepesRetenues: prevision.crepesRetenues,
+          contrainteLimitante: prevision.contrainteLimitante,
+          manqueAGagnerCents: prevision.manqueAGagnerCents,
+          confianceBp: prevision.confianceBp,
+          nbSessionsComparables: prevision.nbSessionsComparables,
+          baseline: {
+            baselineCrepes: prevision.baseline.baselineCrepes,
+            explication: prevision.baseline.explication,
+          },
+          facteurs: prevision.facteurs,
+          evenements: prevision.evenements.map((e) => ({ nom: e.nom })),
+          meteo: prevision.meteo.disponible
+            ? {
+                disponible: true,
+                temperatureC: prevision.meteo.conditions.temperatureC,
+                precipitationsMm: prevision.meteo.conditions.precipitationsMm,
+                ventKmh: prevision.meteo.conditions.ventKmh,
+                ventFort: prevision.meteo.ventFort,
+                explication: prevision.meteo.explication,
+              }
+            : { disponible: false, raison: prevision.meteo.raison },
+          contraintes: prevision.contraintes,
+          alertesStock,
+          horizonJours,
+          alertesDlc,
+        });
+
+        const doc = await rendrePdf(base, {
+          type: 'brief_avant_marche',
+          objetId: calcul.session.id,
           numero: calcul.session.numero,
-          dateSession: calcul.session.dateSession,
-          lieuNom: calcul.session.lieuNom,
-        },
-        crepesRecommandees: prevision.crepesRecommandees,
-        crepesRetenues: prevision.crepesRetenues,
-        contrainteLimitante: prevision.contrainteLimitante,
-        manqueAGagnerCents: prevision.manqueAGagnerCents,
-        confianceBp: prevision.confianceBp,
-        nbSessionsComparables: prevision.nbSessionsComparables,
-        baseline: {
-          baselineCrepes: prevision.baseline.baselineCrepes,
-          explication: prevision.baseline.explication,
-        },
-        facteurs: prevision.facteurs,
-        evenements: prevision.evenements.map((e) => ({ nom: e.nom })),
-        meteo: prevision.meteo.disponible
-          ? {
-              disponible: true,
-              temperatureC: prevision.meteo.conditions.temperatureC,
-              precipitationsMm: prevision.meteo.conditions.precipitationsMm,
-              ventKmh: prevision.meteo.conditions.ventKmh,
-              ventFort: prevision.meteo.ventFort,
-              explication: prevision.meteo.explication,
-            }
-          : { disponible: false, raison: prevision.meteo.raison },
-        contraintes: prevision.contraintes,
-        alertesStock,
-        horizonJours,
-        alertesDlc,
-      });
+          titre: `Brief avant-marché ${calcul.session.numero}`,
+          ...rendu,
+          parametresSource: prevision,
+        });
 
-      const doc = await rendrePdf(base, {
-        type: 'brief_avant_marche',
-        objetId: calcul.session.id,
-        numero: calcul.session.numero,
-        titre: `Brief avant-marché ${calcul.session.numero}`,
-        ...rendu,
-        parametresSource: prevision,
-      });
-
-      const octets = readFileSync(doc.chemin);
-      reponse.header('Content-Disposition', `inline; filename="${basename(doc.chemin)}"`);
-      reponse.type('application/pdf');
-      return octets;
-    });
+        const octets = readFileSync(doc.chemin);
+        reponse.header('Content-Disposition', `inline; filename="${basename(doc.chemin)}"`);
+        reponse.type('application/pdf');
+        return octets;
+      },
+    );
 
     /**
      * Commentaire Claude sur le BRIEF avant-marche — troisième usage Sonnet
@@ -1519,36 +1524,40 @@ export function routesPrevisions(
      * chargement d'un écran — l'IA est un CONFORT, jamais une dépendance (§5),
      * et chaque appel a un coût réel pour le porteur.
      */
-    app.post('/prevision/brief/commenter', async () => {
-      const calcul = await previsionCourante(base, false, options.racineUrlMeteo);
-      const prevision = schemaPrevision.parse(vuePrevision(base, calcul));
+    app.post(
+      '/prevision/brief/commenter',
+      { config: { rateLimit: LIMITE_APPEL_EXTERNE } },
+      async () => {
+        const calcul = await previsionCourante(base, false, options.racineUrlMeteo);
+        const prevision = schemaPrevision.parse(vuePrevision(base, calcul));
 
-      const jour = aujourdHui();
-      // Même paramètre, même lecture que `GET /prevision/brief` ci-dessus :
-      // le commentaire ne doit jamais parler d'une fenêtre DLC différente de
-      // celle imprimée sur le document qu'il commente.
-      const horizonJours = calcul.parametres.entier('brief_horizon_alerte_dlc_jours');
+        const jour = aujourdHui();
+        // Même paramètre, même lecture que `GET /prevision/brief` ci-dessus :
+        // le commentaire ne doit jamais parler d'une fenêtre DLC différente de
+        // celle imprimée sur le document qu'il commente.
+        const horizonJours = calcul.parametres.entier('brief_horizon_alerte_dlc_jours');
 
-      const lignesStock = etatDuStock(base, jour);
-      const alertesStock = lignesStock
-        .filter((l) => statutStock(l.quantiteDisponible, l.stockSecurite) !== 'conforme')
-        .map(
-          (l) =>
-            `${l.nom} (${formaterQuantite(l.quantiteDisponible, l.unite)} restant, seuil ${formaterQuantite(l.stockSecurite, l.unite)})`,
+        const lignesStock = etatDuStock(base, jour);
+        const alertesStock = lignesStock
+          .filter((l) => statutStock(l.quantiteDisponible, l.stockSecurite) !== 'conforme')
+          .map(
+            (l) =>
+              `${l.nom} (${formaterQuantite(l.quantiteDisponible, l.unite)} restant, seuil ${formaterQuantite(l.stockSecurite, l.unite)})`,
+          );
+
+        const alertesDlc = lotsAlerteDlc(base, jour, horizonJours)
+          .filter((l): l is typeof l & { dateDlc: string } => l.dateDlc !== null)
+          .map((l) => `${l.ingredientNom} — DLC ${formaterDate(l.dateDlc)}`);
+
+        const reponse = await demanderCommentaire(
+          base,
+          calcul.parametres,
+          demandeCommentaireBrief({ prevision, alertesStock, alertesDlc }),
         );
 
-      const alertesDlc = lotsAlerteDlc(base, jour, horizonJours)
-        .filter((l): l is typeof l & { dateDlc: string } => l.dateDlc !== null)
-        .map((l) => `${l.ingredientNom} — DLC ${formaterDate(l.dateDlc)}`);
-
-      const reponse = await demanderCommentaire(
-        base,
-        calcul.parametres,
-        demandeCommentaireBrief({ prevision, alertesStock, alertesDlc }),
-      );
-
-      return schemaCommentaireIa.parse(reponse);
-    });
+        return schemaCommentaireIa.parse(reponse);
+      },
+    );
 
     app.get('/previsions', async () => {
       const lignes = listerPrevisions(base);

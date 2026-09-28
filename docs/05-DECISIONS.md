@@ -4768,3 +4768,50 @@ contrat, la fixture le pose (`0` puis `6`). Le jour où ces fichiers sont relus 
   relève de `prevoir()`, hors périmètre de cette décision.
 - **jsdom ne calcule aucun style.** Le registre est vérifié sur le texte et sur les classes, pas sur
   le rendu — le contraste réel du ton `ink-3` reste à voir au navigateur.
+
+## D-099 — Les routes coûteuses sont limitées en débit, même sur une API qui n'écoute que 127.0.0.1
+
+**Date** : 28/09/2026 · **Statut** : appliquée
+
+### Contexte
+
+L'analyse CodeQL (suite `security-extended`, activée le 28/09/2026) signale
+`js/missing-rate-limiting` sur `GET /api/commandes/:id/pdf` et `GET /api/prevision/brief`.
+L'objection évidente — « l'API n'écoute que sur 127.0.0.1 » (`serveur.ts`, `HOTE`) — ne tient
+pas : n'importe quelle page ouverte dans le navigateur du poste peut émettre des `GET` vers
+`http://127.0.0.1:3001`. Elle ne lit pas la réponse, mais la requête part et la route
+s'exécute. Or chaque génération de document lance Chromium (ou ExcelJS) **et archive une
+nouvelle version sur disque** (D-026) : une boucle suffit à saturer le processeur et à remplir
+le disque. Un appel IA est facturé, un envoi de mail part réellement chez le fournisseur.
+
+### Options
+
+1. Rejeter l'alerte comme « application locale » : faux, voir ci-dessus.
+2. Limiter toutes les routes : les écrans appellent les routes de lecture en rafale, une limite
+   globale aurait tôt ou tard refusé un usage normal.
+3. **Limiter seulement les routes coûteuses**, par route, avec `@fastify/rate-limit`
+   (greffon officiel Fastify, `global: false`).
+
+### Choix
+
+Option 3. `apps/api/src/plugins/limitation-debit.ts` porte deux niveaux :
+`LIMITE_GENERATION_DOCUMENT` (30 par minute et par route : les 10 routes de
+`routes/documents.ts`, l'export Excel des économies, le PDF de commande, le brief avant-marché) et `LIMITE_APPEL_EXTERNE`
+(10 par minute et par route : envoi de commande par mail, les trois demandes de commentaire
+IA, la recherche d'événements). Le greffon est inscrit sur l'instance **racine**, avant les
+routes : inscrit dans un contexte encapsulé, il n'aurait vu aucune route de `/api`. Les routes
+GET limitées déclarent aussi `exposeHeadRoute: false` : la route HEAD que Fastify ajoute d'office
+exécute le même gestionnaire, et le greffon lui aurait donné un second compteur. Au-delà
+de la limite, la réponse est un **429** au format habituel
+(`{ erreur: { code: 'trop_de_demandes', message } }`, message en français).
+
+### Conséquences
+
+- La clé est l'adresse IP ; tout arrive de 127.0.0.1, la limite vaut donc pour le poste
+  entier, par route. C'est le but.
+- `plugins/limitation-debit.test.ts` monte le serveur complet et fige la liste EXACTE des
+  routes limitées : une route coûteuse ajoutée sans limite, ou une route ordinaire limitée par
+  erreur, fait échouer le test.
+- Ne protège pas contre ce qu'une page tierce peut faire en une minute sous la limite ; une
+  vérification de l'en-tête `Origin` sur les routes qui écrivent reste une amélioration
+  possible, hors du périmètre de cette décision.

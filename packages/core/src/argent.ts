@@ -54,6 +54,9 @@ export function formaterMontant(centimes: Centimes): string {
   }).format(centimes / 100);
 }
 
+/** Montant saisi apres nettoyage : signe facultatif, chiffres, point decimal facultatif. */
+const MOTIF_MONTANT_SAISI = /^-?\d*(?:\.\d*)?$/;
+
 /**
  * Lit une saisie utilisateur (« 12,34 », « 12.34 », « 1 234,56 », « 12,34 € »)
  * et rend des centimes entiers. Rend `null` si la saisie n'est pas un montant :
@@ -65,7 +68,13 @@ export function parserEuros(saisie: string): Centimes | null {
   // Intl.NumberFormat en fr-BE : un montant copie depuis l'application est donc
   // relu correctement, sans avoir a lister ces caracteres invisibles ici.
   const nettoye = saisie.replace(/\s/g, '').replace(/€/g, '').replace(',', '.');
-  if (nettoye === '' || !/^-?\d*\.?\d*$/.test(nettoye)) return null;
+  // `\d*(?:\.\d*)?` et non `\d*\.?\d*` : les deux reconnaissent exactement les
+  // memes saisies, mais sans point la seconde forme laisse deux `\d*` se
+  // disputer les memes chiffres. Sur une longue suite de chiffres suivie d'un
+  // caractere refuse, le moteur essaie alors chaque partage : cout quadratique
+  // (CodeQL js/polynomial-redos, mesure : 1 s pour 40 000 chiffres). Ici, le
+  // second groupe ne peut commencer que par un point : un seul partage possible.
+  if (nettoye === '' || !MOTIF_MONTANT_SAISI.test(nettoye)) return null;
   const valeur = Number(nettoye);
   if (!Number.isFinite(valeur)) return null;
   // Meme arrondi que partout ailleurs : « -0,005 € » vaut -1 centime, pas -0.

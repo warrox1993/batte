@@ -79,6 +79,9 @@ function messageClient(statut: number): string {
       return 'Le format envoyé n’est pas accepté : utilisez « application/json ».';
     case 404:
       return 'La ressource demandée est introuvable.';
+    case 429:
+      // Limitation de debit des routes couteuses (plugins/limitation-debit.ts).
+      return 'Trop de demandes en peu de temps pour cette action : patientez une minute avant de réessayer.';
     default:
       return 'La requête a été refusée. Vérifiez les données envoyées.';
   }

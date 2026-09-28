@@ -36,6 +36,7 @@ import {
   exportEconomies,
   type DonneesExportEconomies,
 } from '../documents/excel.js';
+import { LIMITE_GENERATION_DOCUMENT } from '../plugins/limitation-debit.js';
 
 /** Année civile courante (Europe/Brussels) — même helper que `routes/comptabilite.ts`,
  * dupliqué ici faute d'accès à ce fichier (hors zone d'écriture). */
@@ -199,39 +200,43 @@ export function routesEconomies(base: BaseBatte): FastifyPluginAsync {
 
     /* ─── Export Excel — « format proche du fichier Mithra fourni » ─────── */
 
-    app.get<{ Querystring: { annee?: string } }>('/exports/economies', async (requete, reponse) => {
-      const annee = analyserAnnee(requete.query.annee);
-      const bornes = bornesAnnee(annee);
+    app.get<{ Querystring: { annee?: string } }>(
+      '/exports/economies',
+      { exposeHeadRoute: false, config: { rateLimit: LIMITE_GENERATION_DOCUMENT } },
+      async (requete, reponse) => {
+        const annee = analyserAnnee(requete.query.annee);
+        const bornes = bornesAnnee(annee);
 
-      const lignes = listerEconomies(base, bornes);
-      const tableau = tableauBordEconomies(base, bornes);
+        const lignes = listerEconomies(base, bornes);
+        const tableau = tableauBordEconomies(base, bornes);
 
-      const donnees: DonneesExportEconomies = {
-        dateExport: new Date(),
-        periodeCouverte: String(annee),
-        lignes: lignes.map((l) => ({
-          dateAction: l.dateAction,
-          numeroCommande: l.commandeNumero,
-          ingredientNom: l.ingredientNom,
-          fournisseurNom: l.fournisseurNom,
-          typeAction: l.typeAction,
-          description: l.description,
-          prixUnitaireAvantCents: l.prixUnitaireAvantCents,
-          prixUnitaireApresCents: l.prixUnitaireApresCents,
-          quantiteConcernee: l.quantiteConcernee,
-          economieCents: l.economieCents,
-        })),
-        tableau,
-      };
-      const octets = await exportEconomies(donnees);
+        const donnees: DonneesExportEconomies = {
+          dateExport: new Date(),
+          periodeCouverte: String(annee),
+          lignes: lignes.map((l) => ({
+            dateAction: l.dateAction,
+            numeroCommande: l.commandeNumero,
+            ingredientNom: l.ingredientNom,
+            fournisseurNom: l.fournisseurNom,
+            typeAction: l.typeAction,
+            description: l.description,
+            prixUnitaireAvantCents: l.prixUnitaireAvantCents,
+            prixUnitaireApresCents: l.prixUnitaireApresCents,
+            quantiteConcernee: l.quantiteConcernee,
+            economieCents: l.economieCents,
+          })),
+          tableau,
+        };
+        const octets = await exportEconomies(donnees);
 
-      const doc = await archiverExportExcel(
-        base,
-        { objetId: `economies-${annee}`, numero: null, parametresSource: donnees },
-        octets,
-      );
+        const doc = await archiverExportExcel(
+          base,
+          { objetId: `economies-${annee}`, numero: null, parametresSource: donnees },
+          octets,
+        );
 
-      return servirFichierXlsx(doc.chemin, reponse);
-    });
+        return servirFichierXlsx(doc.chemin, reponse);
+      },
+    );
   };
 }
