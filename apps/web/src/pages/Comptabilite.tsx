@@ -133,10 +133,22 @@ function parserEntierPositif(saisie: string): number | null {
   return valeur > 0 ? valeur : null;
 }
 
-/** « 100 », « 60 », « 12,5 » -> points de base (0 à 10000). */
-function parserPourcentBp(saisie: string): number | null {
-  const nettoye = saisie.trim().replace(',', '.').replace('%', '');
-  if (nettoye === '' || !/^\d*\.?\d*$/.test(nettoye)) return null;
+/**
+ * « 100 », « 60 », « 12,5 », « 12,5 % » -> points de base (0 à 10000).
+ *
+ * Un seul « % » est toléré, et seulement à la FIN (« 12,5 % ») : l'ancien
+ * `.replace('%', '')` ôtait le premier « % » où qu'il soit, si bien que
+ * « %12 » passait pour 12 % et que « 12,5 % » (espace avant le signe, la
+ * typographie française) était refusé (CodeQL js/incomplete-sanitization,
+ * 28/09/2026). `\d*(?:\.\d*)?` plutôt que `\d*\.?\d*` : mêmes saisies
+ * reconnues, sans le coût quadratique de deux `\d*` qui se disputent les mêmes
+ * chiffres (même correctif que `parserEuros`).
+ */
+export function parserPourcentBp(saisie: string): number | null {
+  const sansEspaces = saisie.trim();
+  const sansSigne = sansEspaces.endsWith('%') ? sansEspaces.slice(0, -1).trimEnd() : sansEspaces;
+  const nettoye = sansSigne.replace(',', '.');
+  if (nettoye === '' || !/^\d*(?:\.\d*)?$/.test(nettoye)) return null;
   const valeur = Number(nettoye);
   if (!Number.isFinite(valeur) || valeur < 0 || valeur > 100) return null;
   return Math.round(valeur * 100);

@@ -4,6 +4,7 @@ import {
   appliquerPointsDeBase,
   formaterMontant,
   formaterPointsDeBase,
+  MOTIF_MONTANT_SAISI,
   parserEuros,
   ratioEnPointsDeBase,
   repartir,
@@ -30,6 +31,40 @@ describe('parserEuros', () => {
     expect(parserEuros('abc')).toBeNull();
     expect(parserEuros('')).toBeNull();
     expect(parserEuros('12,3,4')).toBeNull();
+  });
+
+  it('refuse un second point ou un point seul après un signe, comme avant le correctif ReDoS', () => {
+    expect(parserEuros('1.2.3')).toBeNull();
+    expect(parserEuros('--1')).toBeNull();
+    expect(parserEuros('1-')).toBeNull();
+    expect(parserEuros(',5')).toBe(50);
+    expect(parserEuros('5,')).toBe(500);
+  });
+
+  /**
+   * CodeQL js/polynomial-redos (28/09/2026) : l'ancien motif `^-?\d*\.?\d*$`
+   * essayait chaque partage d'une longue suite de chiffres entre ses deux
+   * `\d*` avant de refuser le caractère final (mesuré : 1 s pour 40 000
+   * chiffres, ~6 s pour 100 000). Le seuil laisse une marge à une CI lente.
+   */
+  it('refuse en temps linéaire une longue suite de chiffres invalide (pas de ReDoS)', () => {
+    const debut = performance.now();
+    expect(parserEuros(`${'9'.repeat(100_000)}x`)).toBeNull();
+    expect(performance.now() - debut).toBeLessThan(500);
+  });
+
+  it('le motif de saisie reconnaît exactement les mêmes chaînes que l’ancien', () => {
+    const ancien = /^-?\d*\.?\d*$/;
+    const alphabet = ['', '-', '.', '1', '9', 'x'];
+    // Toutes les chaînes de 0 à 4 caractères sur cet alphabet : 781 cas.
+    let chaines = [''];
+    for (let longueur = 0; longueur < 4; longueur++) {
+      chaines = chaines.concat(chaines.flatMap((c) => alphabet.slice(1).map((a) => c + a)));
+      chaines = [...new Set(chaines)];
+    }
+    for (const chaine of chaines) {
+      expect(MOTIF_MONTANT_SAISI.test(chaine), JSON.stringify(chaine)).toBe(ancien.test(chaine));
+    }
   });
 
   it('arrondit au centime le plus proche', () => {

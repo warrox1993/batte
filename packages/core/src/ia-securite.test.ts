@@ -80,6 +80,38 @@ describe('assainirDetailIa', () => {
     expect(assainirDetailIa('/usr/local/lib/node_modules/x').trim()).not.toBe('');
   });
 
+  it('masque un mot contenant node_modules, où qu’il soit dans le mot', () => {
+    // Le motif est ancré au début du mot depuis le correctif ReDoS : il doit
+    // toujours emporter le mot ENTIER, préfixe compris.
+    const assaini = assainirDetailIa('échec : chargeur@node_modules-cache/x introuvable');
+    expect(assaini).not.toMatch(/node_modules/i);
+    expect(assaini).not.toContain('chargeur');
+    expect(assaini).toContain('introuvable');
+  });
+
+  it('coupe une ligne de pile précédée de tabulations comme d’espaces', () => {
+    const assaini = assainirDetailIa('Erreur réseau\n\tat appeler (client.ts:3:1)\n    at suite');
+    expect(assaini).toBe('Erreur réseau');
+  });
+
+  /**
+   * CodeQL js/polynomial-redos (28/09/2026). Le texte assaini vient du SDK ou
+   * du système, pas de nous. Deux motifs y coûtaient un temps QUADRATIQUE :
+   * `\n\s*at\s` sur une longue suite de sauts de ligne, et `\S*node_modules\S*`
+   * sur un long mot. Mesuré avant correctif : 1,2 s pour 40 000 caractères,
+   * soit ~7 s pour les 100 000 ci-dessous. Après : quelques millisecondes.
+   * Le seuil de 500 ms laisse une marge large à une machine de CI lente sans
+   * laisser passer le comportement quadratique.
+   */
+  it('reste linéaire sur un texte hostile (pas de ReDoS)', () => {
+    const hostiles = [`${'\n'.repeat(100_000)}x`, `${'\n '.repeat(50_000)}x`, 'a'.repeat(100_000)];
+    for (const texte of hostiles) {
+      const debut = performance.now();
+      assainirDetailIa(texte);
+      expect(performance.now() - debut).toBeLessThan(500);
+    }
+  });
+
   it('reste stable si on l’applique deux fois', () => {
     for (const message of MESSAGES_HOSTILES) {
       const une = assainirDetailIa(message);

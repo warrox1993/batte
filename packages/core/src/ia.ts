@@ -206,8 +206,11 @@ const MOTIFS_A_MASQUER: readonly RegExp[] = [
   // Chemin absolu Windows (`C:\Users\...`) : revele le nom du compte du poste.
   /[A-Za-z]:[\\/][^\s"'`)]+/g,
   // Toute mention d'un chemin de dependance : deja interdite par le balayage
-  // anti-fuite des tests d'integration.
-  /\S*node_modules\S*/gi,
+  // anti-fuite des tests d'integration. `(?<!\S)` ancre le debut au debut du
+  // mot : sans lui, un long mot sans `node_modules` etait re-parcouru depuis
+  // chacun de ses caracteres (cout quadratique, 1,2 s pour 40 000 caracteres).
+  // Meme resultat qu'avant : le motif retenait deja le mot entier.
+  /(?<!\S)\S*node_modules\S*/gi,
   // Chemin absolu POSIX ou chemin d'URL : peut porter un jeton en clair.
   /(?:\/[\w.@~-]+){2,}\/?/g,
 ];
@@ -222,7 +225,13 @@ const MOTIFS_A_MASQUER: readonly RegExp[] = [
 export function assainirDetailIa(detailBrut: string): string {
   // Une pile d'appel Node commence par « \n    at fn (fichier:ligne) » : on la
   // coupe entierement plutot que de la masquer morceau par morceau.
-  let texte = detailBrut.replace(/\n\s*at\s[^\n]*/g, ' ');
+  //
+  // `[^\S\n]*` (blanc SAUF saut de ligne) et non `\s*` : avec `\s*`, une suite de
+  // sauts de ligne sans « at » etait re-parcourue depuis chacun d'eux, soit un
+  // cout quadratique sur un texte qui ne vient pas de nous (CodeQL
+  // js/polynomial-redos ; mesure : 1,2 s pour 40 000 sauts de ligne). Une
+  // ligne de pile ne porte que des espaces avant « at » : rien n'est perdu.
+  let texte = detailBrut.replace(/\n[^\S\n]*at\s[^\n]*/g, ' ');
 
   for (const motif of MOTIFS_A_MASQUER) texte = texte.replace(motif, '[masqué]');
 

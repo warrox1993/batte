@@ -19,6 +19,7 @@ import {
   ImpactVerrouillagePeriode,
   libelleCibleAnnulationDepense,
   messageErreurApi,
+  parserPourcentBp,
   texteConfirmationVerrouillagePeriode,
 } from './Comptabilite';
 
@@ -605,5 +606,44 @@ describe('ImpactVerrouillagePeriode — le décompte chiffré, deux familles jam
     expect(balisage.indexOf('Informatif seulement')).toBeLessThan(
       balisage.indexOf('Les factures fournisseur'),
     );
+  });
+});
+
+describe('parserPourcentBp', () => {
+  it('lit un pourcentage entier ou décimal, avec ou sans signe final', () => {
+    expect(parserPourcentBp('100')).toBe(10000);
+    expect(parserPourcentBp('60')).toBe(6000);
+    expect(parserPourcentBp('12,5')).toBe(1250);
+    expect(parserPourcentBp('12.5%')).toBe(1250);
+    // Typographie française : espace (même insécable) avant le signe.
+    expect(parserPourcentBp('12,5 %')).toBe(1250);
+    expect(parserPourcentBp('12,5\u00a0%')).toBe(1250);
+    expect(parserPourcentBp('  0 % ')).toBe(0);
+  });
+
+  /**
+   * CodeQL js/incomplete-sanitization (28/09/2026) : `.replace('%', '')` ôtait
+   * le PREMIER « % », où qu'il soit. « %12 » passait donc pour 12 % : une
+   * saisie mal formée acceptée comme un taux de déductibilité.
+   */
+  it('refuse un signe % ailleurs qu’à la fin, ou répété', () => {
+    expect(parserPourcentBp('%12')).toBeNull();
+    expect(parserPourcentBp('1%2')).toBeNull();
+    expect(parserPourcentBp('12%%')).toBeNull();
+    expect(parserPourcentBp('%')).toBeNull();
+  });
+
+  it('refuse ce qui n’est pas un pourcentage de 0 à 100', () => {
+    expect(parserPourcentBp('')).toBeNull();
+    expect(parserPourcentBp('abc')).toBeNull();
+    expect(parserPourcentBp('1.2.3')).toBeNull();
+    expect(parserPourcentBp('-5')).toBeNull();
+    expect(parserPourcentBp('100,01')).toBeNull();
+  });
+
+  it('refuse en temps linéaire une longue suite de chiffres invalide (pas de ReDoS)', () => {
+    const debut = performance.now();
+    expect(parserPourcentBp(`${'9'.repeat(100_000)}x`)).toBeNull();
+    expect(performance.now() - debut).toBeLessThan(500);
   });
 });
