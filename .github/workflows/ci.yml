@@ -1,0 +1,65 @@
+# Intégration continue : les vérifications du script `.husky/pre-push` (hors mesure
+# de couverture), rejouées sur une machine vierge à chaque push sur main et à chaque
+# pull request.
+#
+# Les actions sont épinglées par SHA de commit (et non par étiquette mobile),
+# vérifié avec `gh api` le 28/09/2026 :
+#   actions/checkout   v7.0.1 -> 3d3c42e5aac5ba805825da76410c181273ba90b1
+#   actions/setup-node v7.0.0 -> 820762786026740c76f36085b0efc47a31fe5020
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verifier:
+    name: Vérifications
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Installer Node.js 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Vérifier les types
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Vérifier le formatage
+        run: npm run format:check
+
+      # Les documents PDF sont rendus par Chromium (Playwright) : les tests de
+      # rendu en ont besoin, comme l'application.
+      - name: Installer Chromium pour Playwright
+        run: npx playwright install --with-deps chromium
+
+      # Construite AVANT les tests : `apps/api/src/serveur-modes.test.ts` vérifie
+      # que le serveur de production sert réellement `apps/web/dist` (200 sur /).
+      # Sans construction préalable, ce test échoue sur une machine vierge
+      # (constaté au premier passage de cette CI, 28/09/2026).
+      - name: Construire l'interface
+        run: npm run build
+
+      - name: Tests (Vitest)
+        run: npx vitest run

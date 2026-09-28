@@ -1,142 +1,207 @@
 # Batte
 
-ERP mono-utilisateur pour une activité de crêpes ambulantes (marché de La Batte, Liège).
-Tout tourne en local : aucune donnée ne sort du poste, aucun service payant n'est requis.
+[![CI](https://github.com/warrox1993/batte/actions/workflows/ci.yml/badge.svg)](https://github.com/warrox1993/batte/actions/workflows/ci.yml)
 
-Le contexte du projet est dans [`CLAUDE.md`](CLAUDE.md), les spécifications dans [`docs/`](docs/).
-Ce fichier ne dit qu'une chose : **comment lancer l'application**.
+Batte est une application de gestion (un petit ERP) pour un stand de crêpes ambulant : recettes,
+stock par lots, prévision de production, ventes, comptabilité et registre sanitaire, dans un seul
+outil local. Un agent Claude y commente les chiffres et cherche sur le web les événements qui
+peuvent changer la fréquentation d'un marché.
 
----
+Je l'ai conçue pour mon propre projet de stand de crêpes, en indépendant complémentaire, au marché
+de La Batte à Liège (d'où le nom). Deux personnes, un poste, une saisie avant et après chaque
+marché. L'application tourne sur le PC, sans hébergement ni abonnement, et les données restent sur
+le poste. Seuls des services optionnels passent par le réseau : la météo (Open-Meteo, gratuit),
+Claude et le calcul d'itinéraire.
 
-## Prérequis
+Jean-Baptiste Dhondt, développeur full stack à Liège.
 
-- **Node.js 22 LTS ou plus récent** (`node --version`). Le paquet `better-sqlite3` est un module
-  natif : il est téléchargé pré-compilé, aucun outil de compilation C++ n'est nécessaire.
-- Un navigateur récent. Aucune base de données à installer : SQLite est un simple fichier.
+## Captures d'écran
 
----
+Prises avec Chromium headless sur la base de démonstration (`npm run db:seed:demo`) : toutes les
+données sont fictives.
 
-## Premier démarrage, sur une machine vierge
+Tableau de bord : prochaine session, seuils légaux, tâches en retard, dernières sessions.
+
+![Tableau de bord](docs/captures/01-tableau-de-bord.png)
+
+Prochaine session : la recommandation de production et le détail de son calcul : base
+historique, facteur météo, contraintes de stock, de cuisson et de glacière.
+
+![Prochaine session](docs/captures/02-prochaine-session.png)
+
+Stock : chaque ingrédient, ses lots avec leur DLC, et les mouvements d'un lot (réception,
+consommation par une production).
+
+![Stock et mouvements d'un lot](docs/captures/03-stock-lot-mouvements.png)
+
+Comptabilité : synthèse de l'exercice, journaux exportables en Excel, échéancier réglementaire.
+
+![Comptabilité](docs/captures/04-comptabilite.png)
+
+Assistance IA : plafond mensuel, dépense du mois et journal des appels. Ici sans clé d'API :
+l'application le dit et continue de fonctionner.
+
+![Assistance IA](docs/captures/05-assistance-ia.png)
+
+## Ce que fait l'application
+
+| Domaine         | Contenu                                                                                       |
+| --------------- | --------------------------------------------------------------------------------------------- |
+| Recettes        | Fiches techniques versionnées, rendements, allergènes, coût matière                           |
+| Achats et stock | Réceptions par lot, DLC, consommation FEFO, point de commande, bons de commande par mail      |
+| Prévision       | Nombre de crêpes à produire selon l'historique, la météo (Open-Meteo) et les événements       |
+| Ventes          | Sessions de marché, clôture (caisse, invendus, températures), marge par session               |
+| Comptabilité    | Recettes, dépenses, amortissements, seuils légaux belges (franchise TVA, etc.), exports Excel |
+| Qualité (AFSCA) | Relevés de température, plan de nettoyage, traçabilité des lots, registre PDF                 |
+| Documents       | PDF (fiches techniques, brief avant-marché, registre) rendus par Chromium via Playwright      |
+
+## Architecture
+
+Monorepo npm, TypeScript strict partout.
+
+| Paquet          | Rôle                                                                                           |
+| --------------- | ---------------------------------------------------------------------------------------------- |
+| `packages/core` | Logique métier pure : calculs, moteur de prévision, contrats Zod. Aucun accès disque ni réseau |
+| `packages/db`   | Schéma SQLite (Drizzle ORM), 31 migrations, dépôts et services transactionnels                 |
+| `apps/api`      | Serveur Fastify 5 : routes HTTP, documents PDF et Excel, mail, client Claude                   |
+| `apps/web`      | Interface React 19 + Vite 7 + Tailwind CSS 4, un écran par tâche, utilisable au clavier        |
+
+Les choix qui structurent le code :
+
+- Toute la logique chiffrée vit dans `packages/core`, en fonctions pures et testées. Un composant
+  React ou une route Fastify ne calcule pas une marge.
+- Les montants sont des entiers en centimes d'euro, les masses en grammes, les volumes en
+  millilitres. Aucun flottant pour de l'argent ; une conversion volume/masse passe par la densité
+  déclarée de l'ingrédient.
+- Le stock n'est jamais modifié directement : il est la somme de ses mouvements (réception,
+  production, casse, correction). L'historique reste auditable, ce que demande l'AFSCA.
+- Rien ne s'efface : une erreur se corrige par une écriture d'annulation, et les tables sensibles
+  ont un journal d'audit.
+- Zod valide toutes les frontières : corps HTTP, réponses du serveur côté interface, fichiers
+  importés, réponses de Claude.
+- Les seuils, taux et coefficients réglementaires sont des paramètres en base, avec leur source et
+  leur date de validité, jamais des constantes dans le code.
+- Une valeur inconnue s'affiche comme inconnue (un tiret), jamais comme un zéro.
+- En production, un seul processus Fastify sert l'API et l'interface sur `127.0.0.1`. La base est
+  un fichier SQLite, sauvegardé à chaque démarrage (`VACUUM INTO`).
+
+Les spécifications et le journal des 98 décisions d'architecture sont dans [`docs/`](docs/).
+
+## L'IA dans Batte
+
+Le principe tient en une phrase : **l'IA commente, les chiffres viennent d'un calcul classique.**
+Le moteur de prévision est écrit en TypeScript, déterministe et explicable (chaque facteur est
+affiché, voir la deuxième capture). Claude ne produit aucun nombre qui entre en base.
+
+Ce que fait Claude, via `@anthropic-ai/sdk`, uniquement côté serveur :
+
+- Commentaires : il rédige un court commentaire de la prévision, du brief avant-marché et de
+  l'écart entre prévu et réalisé d'une session close. Chaque consigne lui interdit de produire un
+  chiffre : il cite ceux que le moteur lui transmet. Le serveur recalcule lui-même la prévision
+  avant de la faire commenter, pour qu'aucun appelant ne fasse commenter des chiffres inventés.
+- Découverte d'événements, en agent avec recherche web : pour un lieu et un rayon donnés, Claude
+  utilise l'outil serveur `web_search` d'Anthropic pour trouver des événements réels et sourcés
+  (braderies, matchs, travaux, fériés locaux) et les rendre avec leur source. La boucle reprend
+  sur `pause_turn` : au plus 3 tours de 5 recherches, le plafond étant revérifié à chaque tour. La
+  réponse doit se terminer par un bloc JSON validé par un schéma Zod ; une réponse mal formée est
+  refusée et rien n'est proposé.
+- Validation humaine : les événements trouvés arrivent comme propositions en attente.
+  L'utilisateur ajuste l'intensité et la portée estimées, puis valide ou rejette. L'impact sur la
+  prévision est calculé ensuite par l'application, jamais par le modèle.
+
+Les garde-fous :
+
+- Plafond de coût : un plafond mensuel (paramètre, 5 € par défaut) est vérifié avant chaque
+  appel, sur le coût maximal possible de cet appel (entrée estimée et plafond de sortie). Si ce
+  coût peut le dépasser, l'appel n'a pas lieu.
+- Journal : chaque appel est enregistré dans `journal_ia` : usage, modèle, tokens, coût réel
+  (tokens et recherches web facturées), durée, erreur éventuelle.
+- Mode sans IA : sans clé `ANTHROPIC_API_KEY`, avec un plafond atteint ou en cas de panne,
+  chaque écran reste utilisable et annonce simplement que le commentaire est indisponible. La clé
+  ne quitte jamais le serveur.
+- Modèles paramétrables : Claude Haiku 4.5 pour la recherche d'événements, Claude Sonnet 5 pour
+  les commentaires. Les identifiants et les tarifs sont des paramètres en base, modifiables sans
+  toucher au code (statut et prix vérifiés dans la documentation Anthropic le 28/09/2026).
+- Tests sans réseau : les tests font parler le vrai SDK à un faux serveur local
+  (`ANTHROPIC_BASE_URL`) ou à une adresse morte, avec une clé factice. Aucune suite n'appelle l'API.
+
+Non implémenté : la lecture automatique d'un bon de livraison par l'IA était prévue, elle n'a pas
+été construite. Les valeurs correspondantes du schéma sont documentées comme réservées.
+
+## Démarrage rapide
+
+Prérequis : Node.js 22 ou plus récent. Aucune base de données à installer.
 
 ```bash
-npm install          # installe les 4 paquets de l'espace de travail
-npm run db:init      # crée la base, applique les migrations, insère les données de référence
-npm start            # construit l'interface puis lance l'application
+npm install
+npm run db:init        # crée la base, applique les migrations, insère les paramètres
+npm run db:seed:demo   # facultatif : données de démonstration, jamais sur une base réelle
+npm start              # construit l'interface et lance l'application
 ```
 
-Puis ouvrir **<http://127.0.0.1:3001>**.
+Puis ouvrir <http://127.0.0.1:3001>. En développement, `npm run dev` lance l'API sur `:3001` et
+Vite sur `:5173`.
 
-`npm run db:init` n'est pas optionnel. Il insère les ~50 **paramètres** (seuils légaux, taux,
-coefficients du moteur de prévision) sans lesquels les écrans _Seuils_, _Échéances_,
-_Synthèse fiscale_ et _Assistance IA_ affichent une erreur. `CLAUDE.md` §7 interdit de coder ces
-valeurs en dur : elles vivent en base, il faut donc les y mettre.
+Aucune configuration n'est obligatoire. Pour activer Claude ou l'envoi de mails, copier
+`.env.example` en `.env` et renseigner les clés. Le guide complet (sauvegarde, restauration,
+dépannage) est dans [`docs/UTILISATION.md`](docs/UTILISATION.md).
 
-Le script est **rejouable sans risque** : il n'insère que ce qui manque.
+## Tests et qualité
 
-### Données de démonstration (facultatif)
+Mesure du 28/09/2026 :
+
+- 4 845 tests dans 265 fichiers, tous verts, en une minute environ sur mon poste :
+  fonctions pures du cœur, services SQLite, routes Fastify, écrans React montés dans jsdom avec
+  Testing Library, rendu PDF réel par Chromium.
+- Couverture (v8) : 91 % des lignes sur l'ensemble du code, 99,9 % des lignes et 98 % des branches
+  sur `packages/core`.
+- L'intégration continue GitHub Actions rejoue à chaque pull request : vérification des types,
+  ESLint, Prettier, installation de Chromium, construction de l'interface, puis Vitest (un test
+  vérifie que le serveur de production sert bien l'interface construite).
 
 ```bash
-npm run db:seed:demo
+npm run typecheck
+npm run lint
+npm run format:check
+npx vitest run           # ou npm run test:couverture
+npm run build
 ```
 
-Remplit une activité fictive complète (recettes, stock, sessions, comptabilité) pour découvrir
-l'application sans saisir quoi que ce soit. À ne pas lancer sur une base réelle.
+## Limites assumées
 
----
+- Mono-utilisateur et local : pas de comptes, pas de droits, pas de synchronisation entre postes.
+  Le serveur n'écoute que `127.0.0.1`.
+- Interface pensée pour un écran d'ordinateur (1280 px et plus), en français uniquement.
+- Le moteur de prévision démarre à froid : tant que peu de sessions réelles sont enregistrées, il
+  s'appuie sur des valeurs a priori et l'affiche.
+- La lecture d'un bon de livraison par l'IA n'est pas implémentée.
+- L'application aide à tenir les obligations (seuils, registre, échéances), elle ne remplace ni un
+  comptable ni l'AFSCA ; les écrans concernés le rappellent.
 
-## Les deux façons de lancer
+## Méthode
 
-| Commande      | Pour qui                     | Ce qui tourne                                             | Où aller                                       |
-| ------------- | ---------------------------- | --------------------------------------------------------- | ---------------------------------------------- |
-| `npm start`   | **usage quotidien**          | un seul processus : Fastify sert l'API **et** l'interface | <http://127.0.0.1:3001>                        |
-| `npm run dev` | développement (rechargement) | deux processus : API sur `:3001`, Vite sur `:5173`        | <http://localhost:5173> — **pas** le port 3001 |
+Batte a été développée en pilotant Claude Code, pas en lui déléguant le projet. Concrètement :
 
-En développement, ouvrir `http://127.0.0.1:3001` **redirige** vers l'interface : ce port ne sert
-que l'API. En production il n'y a **qu'une** adresse, c'est le principe de la décision
-[D-012](docs/05-DECISIONS.md).
+- des spécifications écrites avant le code (modules, modèle de données, moteur de prévision,
+  parcours d'écran) et un découpage en lots ([`docs/01`](docs/01-SPEC-FONCTIONNELLE.md) à
+  [`docs/06`](docs/06-UI-ET-PARCOURS.md)) ;
+- un contexte permanent pour l'agent, [`CLAUDE.md`](CLAUDE.md), qui fixe les règles
+  d'architecture non négociables et les garde-fous ;
+- chaque décision non triviale consignée avec ses options et ses conséquences
+  ([`docs/05-DECISIONS.md`](docs/05-DECISIONS.md)) ;
+- des audits ciblés relus et arbitrés un par un (erreurs, sécurité, comptabilité, clavier,
+  allergènes : `docs/08` à `docs/40`), et une doctrine qui recense les défauts réellement
+  rencontrés et la façon de les éviter ([`docs/39`](docs/39-DOCTRINE-DES-AGENTS.md)) ;
+- les tests comme preuve : un défaut connu est d'abord décrit par un test `it.fails`, et une
+  mutation volontaire du code vérifie qu'un test sait bien échouer.
 
-Variantes utiles :
+## Structure du dépôt
 
-```bash
-npm run start:api    # relance le serveur sans reconstruire l'interface
-npm run build        # construit seulement l'interface (apps/web/dist)
-PORT=3005 npm start  # change le port (sous PowerShell : $env:PORT='3005'; npm start)
+```text
+apps/api        serveur Fastify, documents, client Claude
+apps/web        interface React
+packages/core   logique métier pure et contrats Zod
+packages/db     schéma Drizzle, migrations, services
+docs/           spécifications, décisions, audits, guide d'utilisation
+.claude/        fiches d'agents et commandes utilisées pendant le développement
 ```
-
-> Une fenêtre sans onglet ni barre d'adresse :
-> `chrome --app=http://127.0.0.1:3001`
-
----
-
-## Configuration
-
-Aucune configuration n'est **obligatoire** : sans fichier `.env`, l'application démarre et
-fonctionne intégralement.
-
-Pour l'assistance Claude ou l'envoi de bons de commande par mail :
-
-```bash
-cp .env.example .env   # PowerShell : Copy-Item .env.example .env
-```
-
-`.env.example` documente **exactement** les variables lues par le code, ni plus ni moins.
-
-- **Sans `ANTHROPIC_API_KEY`** : mode dégradé complet. Tous les écrans restent utilisables ;
-  seuls les commentaires rédigés par Claude sont annoncés comme indisponibles.
-- **Sans configuration SMTP** : les bons de commande sont écrits dans `sorties/` au lieu d'être
-  envoyés (`MAIL_MODE_TEST=true`).
-
----
-
-## Sauvegarde et restauration
-
-- La base est **un seul fichier** : `donnees/batte.sqlite`.
-- À **chaque démarrage**, une copie horodatée et cohérente est écrite dans `sauvegardes/`
-  (`VACUUM INTO`, pas une copie brute), et les copies de plus de 30 jours sont purgées.
-- Pour restaurer : arrêter l'application, remplacer `donnees/batte.sqlite` par la copie choisie,
-  supprimer les fichiers `batte.sqlite-wal` et `batte.sqlite-shm` s'ils subsistent, relancer.
-
-**Arrêter l'application avec `Ctrl+C`** dans sa fenêtre. C'est ce geste qui replie le journal WAL
-et rend le fichier `.sqlite` copiable tel quel (voir [D-033](docs/05-DECISIONS.md)). Fermer la
-fenêtre à la croix ou tuer le processus laisse les dernières écritures dans `batte.sqlite-wal` :
-elles ne sont pas perdues, mais une sauvegarde faite en copiant le seul `.sqlite` serait
-incomplète.
-
----
-
-## Vérifications
-
-```bash
-npm run typecheck      # tsc --noEmit (Node + web)
-npm run lint           # eslint
-npm run test           # vitest
-npm run test:couverture# vitest + seuil de couverture sur packages/core
-npm run format:check   # prettier
-npm run build          # construction de l'interface
-```
-
-Le hook `pre-push` (husky) enchaîne ces six étapes et bloque le push si l'une échoue.
-
----
-
-## En cas de problème
-
-| Symptôme                                                          | Cause et remède                                                                                                   |
-| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `listen EADDRINUSE ... 127.0.0.1:3001`                            | Une autre instance tourne déjà. La fermer, ou lancer sur un autre port (`PORT=3005`).                             |
-| Page blanche, ou `404 Not Found` brut sur `http://127.0.0.1:3001` | L'interface n'a jamais été construite. Lancer `npm run build` (ou `npm start`, qui le fait).                      |
-| « Le paramètre « … » n'est pas défini » sur plusieurs écrans      | La base n'a pas été ensemencée. Lancer `npm run db:seed`.                                                         |
-| « Impossible de contacter le serveur »                            | L'API n'est pas démarrée. Vérifier la fenêtre de `npm start`, et `http://127.0.0.1:3001/api/sante`.               |
-| `npm run dev` : la page ne se met pas à jour                      | Vérifier qu'on est bien sur <http://localhost:5173> et non sur `:3001`.                                           |
-| Écran blanc après un `npm run build` alors que tout marchait      | Vider le cache du navigateur (`Ctrl+Maj+R`) : la page en cache réclame des fichiers renommés par la construction. |
-
-Point de contrôle rapide : **<http://127.0.0.1:3001/api/sante>** indique quelle base est ouverte
-et quels paramètres manquent encore.
-
----
-
-## Ce que l'application ne fait pas
-
-Elle **ne remplace pas** un comptable, un guichet d'entreprises ni l'AFSCA. Les écrans de synthèse
-fiscale portent cette mention. Le registre d'autocontrôle enregistre ce qui a été saisi, avec sa
-date de saisie réelle.

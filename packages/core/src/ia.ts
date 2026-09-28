@@ -14,7 +14,15 @@
 import type { Centimes } from './argent.js';
 import type { Parametres } from './parametres.js';
 
-/** Les cinq usages tracés dans `journal_ia` (docs/02). */
+/**
+ * Les cinq usages tracés dans `journal_ia` (docs/02).
+ *
+ * `extraction` (lecture d'un bon de livraison) est RÉSERVÉ et NON IMPLÉMENTÉ :
+ * aucune route n'écrit cet usage (docs/28-ORPHELINS-DERIVES.md §5). La valeur
+ * reste déclarée parce qu'elle fait partie de l'énumération persistée de
+ * `journal_ia.usage` ; la FAMILLE `extraction`, elle, est bien utilisée par la
+ * découverte d'événements.
+ */
 export type UsageIa = 'prevision' | 'analyse_ecart' | 'extraction' | 'synthese' | 'evenements';
 
 /**

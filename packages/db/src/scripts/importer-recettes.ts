@@ -46,7 +46,7 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { and, eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { creerBase, fermerBase, type BaseBatte } from '../client.js';
 import { ingredient, recette, recetteLigne } from '../schema.js';
 
@@ -73,8 +73,15 @@ export type RapportRecettes = {
 };
 
 const CATEGORIES = new Set([
-  'farine', 'laitier', 'oeuf', 'sucre', 'garniture',
-  'consommable', 'gaz', 'boisson', 'aromate',
+  'farine',
+  'laitier',
+  'oeuf',
+  'sucre',
+  'garniture',
+  'consommable',
+  'gaz',
+  'boisson',
+  'aromate',
 ]);
 const UNITES = new Set(['g', 'ml', 'piece']);
 
@@ -106,24 +113,33 @@ export function importerRecettes(
   base.transaction((tx) => {
     /* ---- 1. les ingredients manquants ---------------------------------- */
     const parNom = new Map(
-      tx.select({ id: ingredient.id, nom: ingredient.nom }).from(ingredient).all()
+      tx
+        .select({ id: ingredient.id, nom: ingredient.nom })
+        .from(ingredient)
+        .all()
         .map((i) => [i.nom, i.id] as const),
     );
 
     for (const src of sources) {
       for (const l of src.lignes) {
         if (parNom.has(l.ingredientNom)) continue;
-        const categorie = CATEGORIES.has(l.categorieSiACreer)
-          ? l.categorieSiACreer
-          : 'aromate';
+        const categorie = CATEGORIES.has(l.categorieSiACreer) ? l.categorieSiACreer : 'aromate';
         const unite = UNITES.has(l.uniteReference) ? l.uniteReference : 'g';
         const id = identifiant(l.ingredientNom, 'ing');
         tx.insert(ingredient)
           .values({
             id,
             nom: l.ingredientNom,
-            categorie: categorie as 'farine' | 'laitier' | 'oeuf' | 'sucre'
-              | 'garniture' | 'consommable' | 'gaz' | 'boisson' | 'aromate',
+            categorie: categorie as
+              | 'farine'
+              | 'laitier'
+              | 'oeuf'
+              | 'sucre'
+              | 'garniture'
+              | 'consommable'
+              | 'gaz'
+              | 'boisson'
+              | 'aromate',
             uniteReference: unite as 'g' | 'ml' | 'piece',
             densiteGParMl: null,
             // ⛔ VIDE ET NON VERIFIE = « non documente ».

@@ -152,14 +152,20 @@ export function importerCatalogue(
         tx.update(fournisseur).set(valeurs).where(eq(fournisseur.id, f.id)).run();
         rapport.fournisseursMisAJour += 1;
       } else {
-        tx.insert(fournisseur).values({ id: f.id, ...valeurs, creeLe: maintenant }).run();
+        tx.insert(fournisseur)
+          .values({ id: f.id, ...valeurs, creeLe: maintenant })
+          .run();
         rapport.fournisseursInseres += 1;
       }
     }
 
     /* ---- 2. le catalogue ------------------------------------------------ */
     const connus = new Set(
-      tx.select({ id: fournisseur.id }).from(fournisseur).all().map((r) => r.id),
+      tx
+        .select({ id: fournisseur.id })
+        .from(fournisseur)
+        .all()
+        .map((r) => r.id),
     );
 
     for (const l of lignes) {
@@ -280,9 +286,7 @@ function principal(): void {
     // ⛔ L'EGALITE QUI INTERDIT LA PERTE SILENCIEUSE.
     const traitees = r.cataloguesInseres + r.cataloguesMisAJour + r.cataloguesIgnores;
     if (traitees !== lignes.length) {
-      console.error(
-        `\n⛔ COMPTE FAUX : ${lignes.length} lignes en source, ${traitees} traitees.`,
-      );
+      console.error(`\n⛔ COMPTE FAUX : ${lignes.length} lignes en source, ${traitees} traitees.`);
       process.exit(1);
     }
     console.log(

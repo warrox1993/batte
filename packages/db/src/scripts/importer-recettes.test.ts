@@ -51,20 +51,60 @@ const SOURCE: RecetteSource[] = [
     code: 'R1',
     rendementReferenceMl: 1750,
     lignes: [
-      { ingredientNom: 'Farine de froment T55', quantiteUniteRef: 500, uniteReference: 'g', categorieSiACreer: 'farine' },
-      { ingredientNom: 'Lait entier', quantiteUniteRef: 1000, uniteReference: 'ml', categorieSiACreer: 'laitier' },
-      { ingredientNom: 'Œufs entiers', quantiteUniteRef: 4, uniteReference: 'piece', categorieSiACreer: 'oeuf' },
-      { ingredientNom: "Jaunes d'œufs", quantiteUniteRef: 2, uniteReference: 'piece', categorieSiACreer: 'oeuf' },
-      { ingredientNom: 'Beurre', quantiteUniteRef: 100, uniteReference: 'g', categorieSiACreer: 'laitier' },
-      { ingredientNom: 'Rhum brun', quantiteUniteRef: 30, uniteReference: 'ml', categorieSiACreer: 'aromate' },
+      {
+        ingredientNom: 'Farine de froment T55',
+        quantiteUniteRef: 500,
+        uniteReference: 'g',
+        categorieSiACreer: 'farine',
+      },
+      {
+        ingredientNom: 'Lait entier',
+        quantiteUniteRef: 1000,
+        uniteReference: 'ml',
+        categorieSiACreer: 'laitier',
+      },
+      {
+        ingredientNom: 'Œufs entiers',
+        quantiteUniteRef: 4,
+        uniteReference: 'piece',
+        categorieSiACreer: 'oeuf',
+      },
+      {
+        ingredientNom: "Jaunes d'œufs",
+        quantiteUniteRef: 2,
+        uniteReference: 'piece',
+        categorieSiACreer: 'oeuf',
+      },
+      {
+        ingredientNom: 'Beurre',
+        quantiteUniteRef: 100,
+        uniteReference: 'g',
+        categorieSiACreer: 'laitier',
+      },
+      {
+        ingredientNom: 'Rhum brun',
+        quantiteUniteRef: 30,
+        uniteReference: 'ml',
+        categorieSiACreer: 'aromate',
+      },
     ],
   },
   {
     code: 'R2',
     rendementReferenceMl: 1400,
     lignes: [
-      { ingredientNom: 'Farine de sarrasin', quantiteUniteRef: 180, uniteReference: 'g', categorieSiACreer: 'farine' },
-      { ingredientNom: 'Gomme de xanthane', quantiteUniteRef: 3, uniteReference: 'g', categorieSiACreer: 'aromate' },
+      {
+        ingredientNom: 'Farine de sarrasin',
+        quantiteUniteRef: 180,
+        uniteReference: 'g',
+        categorieSiACreer: 'farine',
+      },
+      {
+        ingredientNom: 'Gomme de xanthane',
+        quantiteUniteRef: 3,
+        uniteReference: 'g',
+        categorieSiACreer: 'aromate',
+      },
     ],
   },
 ];
@@ -76,18 +116,36 @@ function poserRecettesVides(base: BaseBatte): void {
     .insert(recette)
     .values([
       {
-        id: 'rec-r1', code: 'R1', nom: 'Pâte à crêpes froment', version: 1,
-        statut: 'active', typePate: 'froment', sansGluten: false,
-        rendementReferenceMl: 455, rendementReferenceCrepes: 7,
-        perteCuissonBp: 300, tauxCasseBp: 200, perteFixeMl: 0,
-        creeLe: t, modifieLe: t,
+        id: 'rec-r1',
+        code: 'R1',
+        nom: 'Pâte à crêpes froment',
+        version: 1,
+        statut: 'active',
+        typePate: 'froment',
+        sansGluten: false,
+        rendementReferenceMl: 455,
+        rendementReferenceCrepes: 7,
+        perteCuissonBp: 300,
+        tauxCasseBp: 200,
+        perteFixeMl: 0,
+        creeLe: t,
+        modifieLe: t,
       },
       {
-        id: 'rec-r2', code: 'R2', nom: 'Pâte sarrasin-châtaigne', version: 1,
-        statut: 'brouillon', typePate: 'sarrasin-chataigne', sansGluten: true,
-        rendementReferenceMl: 441, rendementReferenceCrepes: 6,
-        perteCuissonBp: 300, tauxCasseBp: 200, perteFixeMl: 0,
-        creeLe: t, modifieLe: t,
+        id: 'rec-r2',
+        code: 'R2',
+        nom: 'Pâte sarrasin-châtaigne',
+        version: 1,
+        statut: 'brouillon',
+        typePate: 'sarrasin-chataigne',
+        sansGluten: true,
+        rendementReferenceMl: 441,
+        rendementReferenceCrepes: 6,
+        perteCuissonBp: 300,
+        tauxCasseBp: 200,
+        perteFixeMl: 0,
+        creeLe: t,
+        modifieLe: t,
       },
     ])
     .run();
@@ -105,11 +163,7 @@ describe('Migration des recettes — le classeur fait foi', () => {
   it('cree les ingredients manquants, en NON DOCUMENTE', () => {
     const r = importerRecettes(base, SOURCE);
 
-    const rhum = base
-      .select()
-      .from(ingredient)
-      .where(eq(ingredient.nom, 'Rhum brun'))
-      .get();
+    const rhum = base.select().from(ingredient).where(eq(ingredient.nom, 'Rhum brun')).get();
     expect(rhum).toBeDefined();
     expect(rhum!.uniteReference).toBe('ml');
     // ⛔ LE POINT QUI COMPTE : « non documente », jamais « ne contient pas ».
@@ -169,9 +223,15 @@ describe('Migration des recettes — le classeur fait foi', () => {
 
   it('relance sans doubler : deux migrations donnent le meme compte', () => {
     importerRecettes(base, SOURCE);
-    const apresUn = base.select({ n: sql<number>`count(*)` }).from(recetteLigne).get()!.n;
+    const apresUn = base
+      .select({ n: sql<number>`count(*)` })
+      .from(recetteLigne)
+      .get()!.n;
     const r = importerRecettes(base, SOURCE);
-    const apresDeux = base.select({ n: sql<number>`count(*)` }).from(recetteLigne).get()!.n;
+    const apresDeux = base
+      .select({ n: sql<number>`count(*)` })
+      .from(recetteLigne)
+      .get()!.n;
     expect(apresDeux).toBe(apresUn);
     expect(r.ingredientsCrees).toBe(0); // ils existent deja
   });

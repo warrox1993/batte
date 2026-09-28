@@ -559,7 +559,11 @@ export const reception = sqliteTable(
     fichierScanPath: text('fichier_scan_path'),
     /** Reference vers `commande_fournisseur`, table du Lot 7. */
     commandeId: text('commande_id'),
-    /** `ia_validee` = extraite d'un bon de livraison puis validee ligne a ligne. */
+    /**
+     * `ia_validee` = extraite d'un bon de livraison puis validee ligne a ligne.
+     * Valeur RESERVEE : l'extraction par l'IA n'est pas implementee, aucune
+     * ecriture ne la produit aujourd'hui (docs/28-ORPHELINS-DERIVES.md §5).
+     */
     source: text('source', { enum: ['manuelle', 'ia_validee'] })
       .notNull()
       .default('manuelle'),

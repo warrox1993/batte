@@ -2,6 +2,10 @@
 
 > Ce fichier est le contexte permanent du projet. Il est lu à chaque session Claude Code.
 > Les spécifications détaillées sont dans `docs/`. Ne pas dupliquer ici ce qui y est déjà écrit.
+>
+> Il est conservé dans le dépôt comme trace de la méthode : l'application a été développée en
+> pilotant Claude Code à partir de ce contexte, des spécifications de `docs/`, du journal de
+> décisions (`docs/05-DECISIONS.md`) et des audits successifs (`docs/08` à `docs/40`).
 
 ---
 
@@ -164,8 +168,21 @@ Trois usages, trois modèles, dans cet ordre de préférence :
 | Commentaire de prévision, analyse d'écart, brief avant-marché                    | Sonnet                         | ~4×/mois  |
 | Analyse trimestrielle profonde, arbitrages stratégiques                          | Sonnet, ou Opus ponctuellement | rare      |
 
-Repères de tarification API (vérifiés le 26/07/2026, à reconfirmer sur
-<https://platform.claude.com/docs/en/about-claude/pricing>) : <cite index="12-1">Haiku 4.5 est facturé 1 $ / 5 $ par million de tokens d'entrée / sortie, Sonnet 5 3 $ / 15 $</cite>, <cite index="14-1">avec un tarif d'introduction Sonnet 5 à 2 $ / 10 $ jusqu'au 31 août 2026</cite>. <cite index="9-1">Le cache de prompt réduit le coût des entrées mises en cache d'environ 90 %, et l'API Batch applique une remise de 50 % sur tous les modèles.</cite>
+**État réel au 28/09/2026.** L'extraction structurée (lecture d'un bon de livraison) **n'est pas
+implémentée** : la valeur `extraction` de `journal_ia.usage` et `reception.source = 'ia_validee'`
+sont réservées, jamais écrites. Le modèle bon marché de cette famille (Haiku 4.5) sert aujourd'hui
+à la découverte d'événements avec l'outil serveur de recherche web ; Sonnet 5 rédige les
+commentaires (prévision, analyse d'écart, synthèse). Les deux identifiants de modèle sont des
+paramètres en base (`ia_modele_extraction`, `ia_modele_commentaire`), jamais du code.
+
+Repères de tarification API (page officielle
+<https://platform.claude.com/docs/en/about-claude/pricing>, vérifiée le 28/09/2026) : Haiku 4.5
+à 1 $ / 5 $ par million de tokens d'entrée / sortie ; Sonnet 5 à 2 $ / 10 $, le tarif
+d'introduction étant devenu le tarif standard ; la recherche web à 10 $ les 1 000 recherches.
+Le cache de prompt facture les entrées relues à 10 % du prix de base, et l'API Batch applique
+une remise de 50 %. Haiku 4.5 (`claude-haiku-4-5-20251001`) est actif et non déprécié à cette
+date ; son retrait provisoire n'interviendra pas avant le 15/10/2026, avec un préavis annoncé
+d'au moins 60 jours (page officielle des retraits de modèles).
 
 **Au volume de ce projet (une session de marché par semaine), la dépense mensuelle attendue
 se compte en unités d'euros, pas en dizaines.** Implémenter malgré tout :
@@ -198,8 +215,8 @@ codées en dur.
   0,1823 €/pièce et beurre 5,65 €/kg (Maison Schoonbrodt), vergeoise 1,66 €/kg (Keramis),
   sel 12,79 €/kg (Vajra). **Vanille et rhum ne sont chez aucun fournisseur consulté** : le
   total est donc un plancher, pas le coût complet.
-  Source : `~/.claude/skills/devis-fournisseurs/scripts/cout_fournee.py`, à rejouer à chaque
-  nouveau devis — les prix bougent, ce chiffre aussi.
+  Source : un script de calcul tenu hors du dépôt, à rejouer à chaque nouveau devis — les prix
+  bougent, ce chiffre aussi.
 - **Coût par crêpe : INCONNU.** Il faut le rendement d'une fournée, qui n'a jamais été compté.
   Peser une fournée et compter les crêpes une seule fois suffit. Tant que ce n'est pas fait,
   aucun coût unitaire ne doit apparaître dans l'application autrement que vide.
@@ -308,9 +325,13 @@ chose.
 
 ### 9.2 Quels agents utiliser — décision du porteur, 01/08/2026
 
-> **Utiliser les agents INSTALLÉS** (ceux du dossier `.claude/agents/` venus de GitHub, et ceux des
-> greffons : `pr-review-toolkit:*`, `feature-dev:*`, `claude-security:*`, `code-simplifier:*`…).
+> **Utiliser les agents INSTALLÉS** (fiches génériques installées au niveau utilisateur, et ceux
+> des greffons : `pr-review-toolkit:*`, `feature-dev:*`, `claude-security:*`, `code-simplifier:*`…).
 > **Ne pas fabriquer d'agents maison pour les remplacer.**
+>
+> Mise à jour du 28/09/2026 : les fiches génériques venues de GitHub (Kubernetes, Terraform, SEO…)
+> ont été retirées de `.claude/agents/`, elles n'avaient rien à voir avec ce projet. Seules les
+> quatre fiches `batte-*` y restent.
 
 Le catalogue installé est riche et spécialisé — `silent-failure-hunter` pour les échecs avalés,
 `comment-analyzer` pour les commentaires qui mentent, `pr-test-analyzer` pour la qualité des tests,

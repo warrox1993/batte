@@ -921,9 +921,13 @@ export const CATALOGUE_PARAMETRES: readonly DefinitionParametre[] = [
     typeValeur: 'texte',
     valeurDefaut: 'claude-haiku-4-5-20251001',
     description:
-      "Modèle utilisé pour l'extraction structurée (lecture d'un bon de livraison, " +
-      'normalisation de libellés). Usage fréquent, donc le modèle le moins cher.',
-    source: 'CLAUDE.md §5 — tableau des trois usages.',
+      'Modèle bon marché de la famille « extraction ». Il sert aujourd’hui à la ' +
+      'découverte d’événements (recherche web). La lecture d’un bon de livraison, ' +
+      'prévue pour cette famille, n’est pas implémentée.',
+    source:
+      'CLAUDE.md §5. Statut vérifié le 28/09/2026 sur la page officielle des retraits ' +
+      'de modèles Anthropic : actif, non déprécié, retrait provisoire pas avant le ' +
+      '15/10/2026, avec un préavis annoncé d’au moins 60 jours.',
     dateDebutValidite: '2026-01-01',
   },
   {
@@ -965,8 +969,8 @@ export const CATALOGUE_PARAMETRES: readonly DefinitionParametre[] = [
     description:
       "Tarif d'entrée du modèle de commentaire, en centimes d'euro par million de tokens.",
     source:
-      'CLAUDE.md §5 — Sonnet 5 au tarif d’introduction de 2 $/Mtok jusqu’au ' +
-      '31/08/2026, converti à ~1,84 €. Passera à ~2,76 € ensuite : à réviser.',
+      'Sonnet 5 à 2 $/Mtok en entrée, converti à ~1,84 €. Le tarif d’introduction ' +
+      'est devenu le tarif standard (page officielle des prix, vérifiée le 28/09/2026).',
     dateDebutValidite: '2026-01-01',
   },
   {
@@ -976,8 +980,8 @@ export const CATALOGUE_PARAMETRES: readonly DefinitionParametre[] = [
     description:
       'Tarif de sortie du modèle de commentaire, en centimes d’euro par million de tokens.',
     source:
-      'CLAUDE.md §5 — Sonnet 5 au tarif d’introduction de 10 $/Mtok jusqu’au ' +
-      '31/08/2026, converti à ~9,20 €. Passera à ~13,80 € ensuite : à réviser.',
+      'Sonnet 5 à 10 $/Mtok en sortie, converti à ~9,20 €. Le tarif d’introduction ' +
+      'est devenu le tarif standard (page officielle des prix, vérifiée le 28/09/2026).',
     dateDebutValidite: '2026-01-01',
   },
   {
