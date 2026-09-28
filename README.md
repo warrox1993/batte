@@ -24,8 +24,8 @@ Tableau de bord : prochaine session, seuils légaux, tâches en retard, dernièr
 
 ![Tableau de bord](docs/captures/01-tableau-de-bord.png)
 
-Prochaine session : la recommandation de production et le détail de son calcul : base
-historique, facteur météo, contraintes de stock, de cuisson et de glacière.
+Prochaine session : la recommandation de production et le détail de son calcul (base
+historique, facteur météo, contraintes de stock, de cuisson et de glacière).
 
 ![Prochaine session](docs/captures/02-prochaine-session.png)
 
@@ -114,8 +114,8 @@ Les garde-fous :
 - Plafond de coût : un plafond mensuel (paramètre, 5 € par défaut) est vérifié avant chaque
   appel, sur le coût maximal possible de cet appel (entrée estimée et plafond de sortie). Si ce
   coût peut le dépasser, l'appel n'a pas lieu.
-- Journal : chaque appel est enregistré dans `journal_ia` : usage, modèle, tokens, coût réel
-  (tokens et recherches web facturées), durée, erreur éventuelle.
+- Journal : chaque appel est enregistré dans `journal_ia` avec son usage, son modèle, ses tokens,
+  son coût réel (tokens et recherches web facturées), sa durée et son erreur éventuelle.
 - Mode sans IA : sans clé `ANTHROPIC_API_KEY`, avec un plafond atteint ou en cas de panne,
   chaque écran reste utilisable et annonce simplement que le commentaire est indisponible. La clé
   ne quitte jamais le serveur.
