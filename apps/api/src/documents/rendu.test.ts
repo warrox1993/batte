@@ -7,6 +7,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { creerBase, migrer, schema, seed, type BaseBatte } from '@batte/db';
 import { eq } from 'drizzle-orm';
@@ -19,7 +20,13 @@ import {
   rapportSession,
 } from './gabarits.js';
 import { registreAfscaMensuel } from './registre-afsca.js';
-import { fermerNavigateur, rendrePdf, verifierIntegrite, versionsDocument } from './rendu.js';
+import {
+  archiverFichierGenere,
+  fermerNavigateur,
+  rendrePdf,
+  verifierIntegrite,
+  versionsDocument,
+} from './rendu.js';
 
 // DEFAUT CORRIGÉ (diagnostic du 31/07/2026) : `vi.setConfig` doit s'executer
 // PENDANT LA COLLECTE (donc au niveau du module, avant tout `describe`), pas
@@ -658,4 +665,30 @@ describe('Lot 6 — pied de page : le câblage options.pied ressort de chaque ga
       expect(etiquette.options.pied).toBeUndefined();
     },
   );
+});
+
+/**
+ * CodeQL js/file-system-race (28/09/2026) : la taille venait d'un `statSync`,
+ * l'empreinte d'un `readFileSync` ulterieur. Les deux decrivent desormais le
+ * MEME contenu, lu une seule fois.
+ */
+describe('archiverFichierGenere — taille et empreinte d’une seule lecture', () => {
+  it('archive la taille et l’empreinte exactes des octets écrits', async () => {
+    const base = creerBase(':memory:');
+    migrer(base);
+    const octets = Buffer.from('contenu de test : taille et empreinte cohérentes\n'.repeat(50));
+
+    const doc = await archiverFichierGenere(
+      base,
+      { type: 'fiche_technique', objetId: 'essai-course', numero: 'ESSAI', extension: 'txt' },
+      (chemin) => writeFileSync(chemin, octets),
+    );
+    try {
+      expect(doc.tailleOctets).toBe(octets.length);
+      expect(doc.hashSha256).toBe(createHash('sha256').update(octets).digest('hex'));
+      expect(verifierIntegrite(base, doc.id)).toEqual({ intact: true, raison: null });
+    } finally {
+      rmSync(doc.chemin, { force: true });
+    }
+  });
 });
