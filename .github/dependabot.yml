@@ -21,6 +21,13 @@ updates:
     groups:
       mineures-et-correctifs:
         update-types: [minor, patch]
+    ignore:
+      # TypeScript 7 (compilateur natif) : typescript-eslint, même dans sa
+      # dernière version stable (8.70.1 au 28/09/2026), exige typescript
+      # « >=4.8.4 <6.1.0 ». La PR #15 (5.9.3 -> 7.0.2) échouait dès `npm ci`
+      # (ERESOLVE). À retirer quand typescript-eslint acceptera TypeScript 7.
+      - dependency-name: typescript
+        versions: ['>=7.0.0']
 
   - package-ecosystem: github-actions
     directory: /
