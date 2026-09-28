@@ -207,11 +207,17 @@ export function construireServeur(base: BaseBatte, options: OptionsServeur = {})
      * base comptable et AFSCA reelle. C'est la ce qu'une traversee viserait,
      * pas un `.env` (il n'y en a pas sur disque, seulement `.env.example`).
      *
-     * Ces deux options ne CORRIGENT pas la vulnerabilite du plugin — seule une
-     * montee de version le ferait, et elle franchit deux majeures. Elles
-     * reduisent la surface avec ce qui est disponible aujourd'hui, sans rien
-     * casser : `dist` ne contient aucun fichier commencant par un point, et
-     * `index.html` est le seul document d'entree.
+     * Ces deux options ne CORRIGEAIENT pas la vulnerabilite du plugin — seule
+     * une montee de version le pouvait, et elle franchissait deux majeures.
+     * Elles reduisent la surface sans rien casser : `dist` ne contient aucun
+     * fichier commencant par un point, et `index.html` est le seul document
+     * d'entree.
+     *
+     * Mise a jour du 28/09/2026 : le plugin est passe en 10.1.5, version qui
+     * corrige les quatre avis (npm audit --omit=dev : 0 vulnerabilite). Les
+     * ruptures des versions 9 et 10 (content-disposition, `setHeaders` qui
+     * recoit la reponse Fastify) ne touchent pas cet usage. Les deux options
+     * restent : elles ne coutent rien.
      *
      * Le vrai garde-fou reste ailleurs : le serveur ecoute sur `127.0.0.1`
      * (voir `HOTE`), jamais sur `0.0.0.0`.
