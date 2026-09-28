@@ -208,3 +208,7 @@ packages/db     schéma Drizzle, migrations, services
 docs/           spécifications, décisions, audits, guide d'utilisation
 .claude/        fiches d'agents et commandes utilisées pendant le développement
 ```
+
+## Licence
+
+MIT, voir [`LICENSE`](LICENSE).

@@ -1,6 +1,7 @@
 {
   "name": "batte",
   "version": "0.1.0",
+  "license": "MIT",
   "private": true,
   "description": "ERP mono-utilisateur pour une activite de crepes ambulantes",
   "type": "module",
