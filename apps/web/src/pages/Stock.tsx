@@ -994,6 +994,10 @@ export default function Stock() {
    * quel, coherent ou non : ni l'un ni l'autre n'est tu.
    */
   async function verifierIntegrite(): Promise<void> {
+    // Le bouton porte `aria-disabled`, qui n'empeche aucun clic : sans cette
+    // garde, un second clic repartait en second appel (defaut connu corrige
+    // le 28/09/2026).
+    if (etatIntegrite.statut === 'en_cours') return;
     setEtatIntegrite({ statut: 'en_cours' });
     try {
       const resultat = schemaDiagnosticIntegriteStock.parse(

@@ -190,7 +190,7 @@ const champDlc = (n = 1) => screen.getByLabelText(`Date limite de consommation, 
  * `Ctrl+S` est employé partout comme déclencheur : le `<select name="fournisseurId">`
  * porte `required`, donc un CLIC sur le bouton `type="submit"` est intercepté
  * par la validation NATIVE du navigateur tant que le fournisseur est vide — et
- * `enregistrer()` n'est jamais appelée (voir le `it.fails` en fin de fichier).
+ * `enregistrer()` n'est jamais appelée (voir le test (ex-`it.fails`) en fin de fichier).
  */
 async function remplirLigneValide(utilisateur: ReturnType<typeof userEvent.setup>): Promise<void> {
   await utilisateur.selectOptions(champIngredient(), 'ing-farine');

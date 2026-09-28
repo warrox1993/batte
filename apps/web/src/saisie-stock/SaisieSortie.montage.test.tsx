@@ -77,7 +77,7 @@ function poser(surcharges: Partial<Props> = {}): Props {
  *
  * Les motifs sont ancrés (`^`) plutôt qu'exacts parce que `Enveloppe`
  * (`./champs`) place le texte d'aide À L'INTÉRIEUR du `<label>` : il entre donc
- * dans le nom accessible du contrôle. Voir le `it.fails` en fin de fichier —
+ * dans le nom accessible du contrôle. Voir le test (ex-`it.fails`) en fin de fichier —
  * c'est un défaut, pas une convenance de test.
  */
 const champNature = () => screen.getByRole('combobox', { name: /^Nature de la sortie/ });
@@ -111,7 +111,7 @@ describe('SaisieSortie — refus de saisie : aucun appel réseau ne part sur un 
 
     // LE point : un mouvement sans code motif ne répond pas à « où fuit la
     // matière ? » (docs/07 §6.8 rang 9). Il ne doit jamais atteindre le réseau.
-    // Ce garde-fou-là tient — voir le `it.fails` juste en dessous pour ce qui,
+    // Ce garde-fou-là tient — voir le test (ex-`it.fails`) juste en dessous pour ce qui,
     // lui, ne tient pas : le MESSAGE que l'écran croit afficher.
     expect(appelApi).not.toHaveBeenCalled();
   });
@@ -264,7 +264,7 @@ describe('SaisieSortie — refus de saisie : aucun appel réseau ne part sur un 
 
     await utilisateur.clear(champDate());
     // Ctrl+S et non le clic : c'est le seul chemin qui atteint `enregistrer()`
-    // quand le motif est vide (voir le `it.fails` ci-dessus).
+    // quand le motif est vide (voir le test (ex-`it.fails`) ci-dessus).
     await utilisateur.keyboard('{Control>}s{/Control}');
 
     expect(screen.getByText('Choisissez un motif dans la liste.')).toBeInTheDocument();

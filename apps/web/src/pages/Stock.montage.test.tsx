@@ -697,28 +697,45 @@ describe('Stock — réception, aller ET retour au clavier', () => {
    * cas n'est pas théorique — c'est l'écran que voit quelqu'un qui démarre,
    * avant d'avoir créé son premier fournisseur.
    *
-   * Ce test redeviendra ROUGE (« Expect test to fail ») dès que l'état vide
-   * offrira un retour, et signalera alors de lui-même qu'il doit redevenir un
-   * `it` ordinaire.
+   * CORRIGÉ le 28/09/2026 : sans fournisseur actif, `SaisieReception` n'a
+   * aucune saisie à protéger ; Échap y revient à l'écran précédent et un
+   * bouton « Annuler », focalisé d'office, offre la même sortie. Le test, en
+   * `it.fails` jusque-là, est devenu un test ordinaire.
    */
-  it.fails(
-    'DÉFAUT CONNU — sans fournisseur actif, la réception est un cul-de-sac au clavier',
-    async () => {
-      brancherApi({
-        ...reponsesNominales(),
-        ...reponsesReferentielMinimal(),
-        'GET /fournisseurs': () => Promise.resolve({ data: [], meta: { total: 0 } }),
-      });
-      monter();
-      await screen.findByRole('row', { name: /Café moulu/ });
+  it('sans fournisseur actif, Échap quitte la réception : plus de cul-de-sac au clavier (défaut corrigé le 28/09/2026)', async () => {
+    brancherApi({
+      ...reponsesNominales(),
+      ...reponsesReferentielMinimal(),
+      'GET /fournisseurs': () => Promise.resolve({ data: [], meta: { total: 0 } }),
+    });
+    monter();
+    await screen.findByRole('row', { name: /Café moulu/ });
 
-      await userEvent.click(screen.getByRole('button', { name: 'Enregistrer une réception' }));
-      expect(await screen.findByText('Aucun fournisseur actif')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer une réception' }));
+    expect(await screen.findByText('Aucun fournisseur actif')).toBeInTheDocument();
 
-      await userEvent.keyboard('{Escape}');
-      expect(screen.queryByText('Aucun fournisseur actif')).not.toBeInTheDocument();
-    },
-  );
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByText('Aucun fournisseur actif')).not.toBeInTheDocument();
+  });
+
+  it('sans fournisseur actif, un bouton « Annuler » reçoit le focus et ramène au stock', async () => {
+    brancherApi({
+      ...reponsesNominales(),
+      ...reponsesReferentielMinimal(),
+      'GET /fournisseurs': () => Promise.resolve({ data: [], meta: { total: 0 } }),
+    });
+    monter();
+    await screen.findByRole('row', { name: /Café moulu/ });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer une réception' }));
+    await screen.findByText('Aucun fournisseur actif');
+    const annuler = screen.getByRole('button', { name: 'Annuler' });
+    await waitFor(() => expect(annuler).toHaveFocus());
+
+    await userEvent.keyboard('{Enter}');
+    expect(screen.queryByText('Aucun fournisseur actif')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Enregistrer une réception' })).toBeInTheDocument();
+  });
 });
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -769,7 +786,7 @@ describe('Stock — le contrôle d’intégrité pendant l’aller-retour (prome
 
       // 1. L'attente est ANNONCÉE, sans retirer le bouton du parcours de
       //    tabulation — c'est tout l'intérêt d'`aria-disabled` ici plutôt que
-      //    `disabled` natif (voir le `it.fails` juste en dessous pour ce que
+      //    `disabled` natif (voir le test (ex-`it.fails`) juste en dessous pour ce que
       //    ce choix coûte quand AUCUN garde-fou ne l'accompagne).
       await waitFor(() => expect(bouton).toHaveAttribute('aria-disabled', 'true'));
       expect(bouton).toHaveAttribute('aria-busy', 'true');
@@ -785,7 +802,7 @@ describe('Stock — le contrôle d’intégrité pendant l’aller-retour (prome
   );
 
   /**
-   * ═══ DÉFAUT RÉEL, NON CORRIGÉ (hors zone d'écriture de cette mission) ═══
+   * ═══ DÉFAUT RÉEL, CORRIGÉ LE 28/09/2026 (était en `it.fails`) ═══
    *
    * `verifierIntegrite()` (`Stock.tsx`) ne porte AUCUN garde-fou en tête : ni
    * `if (etatIntegrite.statut === 'en_cours') return;`, ni verrou `useRef`.
@@ -805,29 +822,23 @@ describe('Stock — le contrôle d’intégrité pendant l’aller-retour (prome
    * `Ingredients.montage.test.tsx` en porte la preuve) — seul cet
    * emplacement-ci ne l'a pas reçu.
    *
-   * Ce test rougira dès qu'un garde-fou sera posé en tête de
-   * `verifierIntegrite()`, et réclamera alors sa promotion en test ordinaire
-   * (docs/39 §8).
+   * CORRIGÉ le 28/09/2026 : garde en tête de `verifierIntegrite()`. Le test,
+   * en `it.fails` jusque-là, est devenu un test ordinaire.
    */
-  it.fails(
-    'DÉFAUT CONNU — un second clic pendant la vérification part en second appel réseau',
-    async () => {
-      const controle = routerAvecIntegriteControlee();
-      monter();
-      await screen.findByRole('row', { name: /Café moulu/ });
+  it('un second clic pendant la vérification ne part pas en second appel réseau (défaut corrigé le 28/09/2026)', async () => {
+    const controle = routerAvecIntegriteControlee();
+    monter();
+    await screen.findByRole('row', { name: /Café moulu/ });
 
-      const bouton = screen.getByRole('button', { name: "Vérifier l'intégrité du stock" });
-      await userEvent.click(bouton);
-      await waitFor(() => expect(bouton).toHaveAttribute('aria-disabled', 'true'));
+    const bouton = screen.getByRole('button', { name: "Vérifier l'intégrité du stock" });
+    await userEvent.click(bouton);
+    await waitFor(() => expect(bouton).toHaveAttribute('aria-disabled', 'true'));
 
-      // CE QUE CE TEST ATTEND, et qui échoue aujourd'hui : le second clic ne
-      // devrait déclencher AUCUN second appel.
-      await userEvent.click(bouton);
-      expect(appelApi.mock.calls.filter(([chemin]) => chemin === '/stock/integrite')).toHaveLength(
-        1,
-      );
+    // CE QUE CE TEST ATTEND (tenu depuis le 28/09/2026) : le second clic ne
+    // devrait déclencher AUCUN second appel.
+    await userEvent.click(bouton);
+    expect(appelApi.mock.calls.filter(([chemin]) => chemin === '/stock/integrite')).toHaveLength(1);
 
-      controle.repondre({ coherent: true, nbLotsVerifies: 4, lotsFautifs: [] });
-    },
-  );
+    controle.repondre({ coherent: true, nbLotsVerifies: 4, lotsFautifs: [] });
+  });
 });

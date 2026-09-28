@@ -511,6 +511,32 @@ export function SaisieReception({ variante, onEnregistre, onAnnuler }: SaisieRec
     [fournisseurs],
   );
 
+  /*
+   * SANS FOURNISSEUR ACTIF, pas de formulaire : seulement une explication.
+   * Defaut connu corrige le 28/09/2026 : cet etat etait un cul-de-sac au
+   * clavier (CLAUDE.md §3 regle 10). Le bouton qui ouvrait la saisie n'est plus
+   * rendu, et Echap est volontairement neutralise par l'ecran parent en mode
+   * reception, pour proteger une saisie recopiee d'un bon papier. Ici, il n'y
+   * a AUCUNE saisie a proteger : Echap revient a l'ecran precedent, et un
+   * bouton « Annuler », focalise d'office, offre la meme sortie.
+   */
+  const sansFournisseurActif = referentiel.statut === 'pret' && optionsFournisseurs.length === 0;
+  const boutonSortieSansFournisseurRef = useRef<HTMLButtonElement>(null);
+  // `onAnnuler` est souvent une fonction flechee recreee a chaque rendu du
+  // parent : la lire par une ref evite de rejouer l'effet (et de reprendre le
+  // focus) a chaque rendu.
+  const onAnnulerRef = useRef(onAnnuler);
+  onAnnulerRef.current = onAnnuler;
+  useEffect(() => {
+    if (!sansFournisseurActif) return;
+    requestAnimationFrame(() => boutonSortieSansFournisseurRef.current?.focus());
+    function surAppuiTouche(evenement: KeyboardEvent): void {
+      if (evenement.key === 'Escape') onAnnulerRef.current();
+    }
+    window.addEventListener('keydown', surAppuiTouche);
+    return () => window.removeEventListener('keydown', surAppuiTouche);
+  }, [sansFournisseurActif]);
+
   /**
    * Le NOM SEUL, sans suffixe d'unite. Une liste deroulante coupe son propre
    * texte a la largeur du controle : « Farine de froment T55 (gramme… » perdait
@@ -1135,7 +1161,7 @@ export function SaisieReception({ variante, onEnregistre, onAnnuler }: SaisieRec
     );
   }
 
-  if (optionsFournisseurs.length === 0) {
+  if (sansFournisseurActif) {
     return (
       <Panneau titre={titrePanneau}>
         <EtatVide
@@ -1147,6 +1173,16 @@ export function SaisieReception({ variante, onEnregistre, onAnnuler }: SaisieRec
               : "Une réception se rattache toujours à un fournisseur : c'est lui qui identifie le lot en cas de rappel. Créez-le d'abord dans l'écran Fournisseurs."
           }
         />
+        <div className="px-4 pb-4">
+          <button
+            ref={boutonSortieSansFournisseurRef}
+            type="button"
+            onClick={onAnnuler}
+            className={CLASSE_BOUTON_SECONDAIRE}
+          >
+            Annuler
+          </button>
+        </div>
       </Panneau>
     );
   }
