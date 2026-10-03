@@ -10,7 +10,7 @@
     "start": "cross-env NODE_ENV=production tsx --env-file-if-exists=../../.env src/serveur.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.127.0",
+    "@anthropic-ai/sdk": "^0.128.0",
     "@batte/core": "*",
     "@batte/db": "*",
     "@fastify/rate-limit": "^11.2.0",
