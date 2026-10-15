@@ -1,0 +1,5 @@
+{
+  "commande": "npx vitest run packages/core",
+  "commande_complete": "npm run build && npx vitest run",
+  "delai": 60
+}
